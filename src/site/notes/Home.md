@@ -2,4 +2,4 @@
 {"dg-publish":true,"permalink":"/home/","tags":["gardenEntry"]}
 ---
 
-Hello World!
+Welcom to [Synackroll](https://synackrollbytes.com)'s digital garden.
