@@ -1,5 +1,5 @@
 ---
-{"dg-publish":true,"permalink":"/programming/obsidian-digital-garden/"}
+{"dg-publish":true,"permalink":"/programming/obsidian-digital-garden/","dgPassFrontmatter":true}
 ---
 
 
