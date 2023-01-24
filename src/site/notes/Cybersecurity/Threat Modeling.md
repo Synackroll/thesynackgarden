@@ -13,5 +13,5 @@ The most effective way to determine the client's threat model is to survey them.
 * Do they offer essential services?
 * Are there incentives for criminal organizations to attack them?
 
-For professional, developed resources look to [MITRE ATT&CK](https://attack.mitr.org) or [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Threat_Modeling_Cheat_Sheet.html).
+For professional, developed resources look to [MITRE ATT&CK](https://attack.mitre.org) or [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Threat_Modeling_Cheat_Sheet.html).
 
