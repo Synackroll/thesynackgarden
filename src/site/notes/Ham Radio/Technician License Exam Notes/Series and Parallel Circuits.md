@@ -15,3 +15,4 @@ Picture of resitors in parallel:
 
 When reistors are connected in parralell they are both conected directly to the voltage source.  **The voltage that flows across the reistors will be the same.** The current that flows through the resistors will be equal only if the resistance of the resistors is equal.  Generally, the total current I will be equal to the I1 + ... + In where *n* is the total number of resistors in parallell.
 
+[PDF file](obsidian://open?vault=The_Synack_Garden&file=Images%2FBand%20Chart%208_5%20X%2011%20Color.pdf)
