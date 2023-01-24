@@ -20,3 +20,5 @@ Conductors - Form the connections between components of an electric circuit.  Ty
 Insulators - Materials that do not conduct electricity well.  (i.e., they have a high resistance.)  **Glass** is a good electrical insulator.
 
 The **farad** is the unit of capacitance.  There are 1 million picofarads in a microfarad.
+
+**Resonance** occurs when the effects of capacitance and inductance in circuit are the same (and opposite), for a given frequency.
