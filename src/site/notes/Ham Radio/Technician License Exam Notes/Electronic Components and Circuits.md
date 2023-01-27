@@ -21,3 +21,4 @@ Variable resistors known as **potentiometers** are often used as an adjustable v
 
 
 
+
