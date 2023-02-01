@@ -1,5 +1,5 @@
 ---
-{"dg-publish":true,"permalink":"/cybersecurity/cross-site-scripting/"}
+{"dg-publish":true,"permalink":"/cybersecurity/cross-site-scripting/","tags":["XSS",null]}
 ---
 
 
