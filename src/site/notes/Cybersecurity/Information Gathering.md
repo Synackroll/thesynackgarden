@@ -3,7 +3,7 @@
 ---
 
 
-Our objective is to identify as muhch information from the following areas.
+Our objective is to identify as much information from the following areas.
 
 * Domans and Sub domains
 	* Many Organizations will have forgotten domains and subdomains taht are exposed externally.
