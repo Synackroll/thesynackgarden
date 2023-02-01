@@ -1,5 +1,5 @@
 ---
-{"dg-publish":true,"permalink":"/cybersecurity/dom-based-xss/"}
+{"dg-publish":true,"permalink":"/cybersecurity/dom-based-xss/","tags":["XSS",null]}
 ---
 
 A type of [[Cybersecurity/Cross-Site Scripting\|Cross-Site Scripting]] that is completely processed on the client-side through [[Programming/JavaScript\|JavaScript]].
