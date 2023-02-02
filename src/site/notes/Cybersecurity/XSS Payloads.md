@@ -1,5 +1,5 @@
 ---
-{"dg-publish":true,"permalink":"/cybersecurity/xss-payloads/"}
+{"dg-publish":true,"permalink":"/cybersecurity/xss-payloads/","tags":["XSS"]}
 ---
 
 
