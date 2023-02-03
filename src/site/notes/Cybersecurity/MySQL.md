@@ -104,4 +104,3 @@ Operators:  AND, OR  and NOT.  These can also be represented as &&, ||, and !
 -   AND (`&&`)
 -   OR (`||`)
 Operators at the top are evaluated before the ones at the bottom of the list.
-
