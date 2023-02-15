@@ -18,7 +18,7 @@ The technique characters `BEUSTQ` refers to the following:
 
 One good way to use SQLMAP is to "Copy as cURL" from the Network Monitor panel inside the browser, paste the curl command into thet terminal and change "curl" to "sqlmap".
 
-## GET/POST R;equests
+## GET/POST Requests
 
 **GET** parameters are provided using the -u/--url flags.  For POST requests, use the ```
 --data flag.
