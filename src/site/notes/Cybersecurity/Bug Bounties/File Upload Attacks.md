@@ -195,7 +195,8 @@ A common upload attack is to use a malicious string in the uploaded file name.  
 ### Upload Directory Disclosure
 We can fuzz or do something like an LFI/XXE vulnerability that will allow us to determine where there are uploaded files. 
 
-We might also force upload errors by uploading already existing files or the same file twice to get an error message showing the upload directory.
+We might also force upload errors by uploading already existing files or the same file twice---
+ to get an error message showing the upload directory.
 
 ### Windows Specific Attacks
 Usre reserved characters in the filename | < > *  or ?.  Use reserved names like C, com1, LPT1, or NUL
