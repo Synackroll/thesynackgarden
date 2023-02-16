@@ -236,12 +236,57 @@ Cookies used to contain much more data, but now the man concern is security so c
 There are other ways, like **HTTP Authentication** or an in-page security token such as the kind used by [ViewState](https://www.w3big.com/aspnet/aspnet-viewstate.html). 
 
 ### Cookie token tampering
-Like password reset tokens, cookie tokens neeed to be generated; they are often genereated based on guessable information. It is not rare to see tokens generated from mportant values like userid, grants, time, etc.
+Like password reset tokens, cookie tokens need to be generated; they are often generated based on guessable information. It is not rare to see tokens generated from important values like userid, grants, time, etc.
 
-There's really nor eason for this since everything could be handled server-side.
+There's really no reason for this since everything could be handled server-side.
 
 An example of this is a ascii value coded as hex that includes userid and role.  We ca try things like changing the role in the ascii value and then encode to hex and see if that upgrades privilkeges.
 
 Often web applications encode tokens. For example, some encoding algorithms, such as hex encoding and base64, can be recognized by a trained eye just by having a quick look at the token itself. Others are more tricky. A token could be somehow transformed using, for example, XOR or compression functions before being encoded. We suggest always checking for magic bytes when you have a sequence of bytes that looks like junk to you since they can help you identify the format. Wikipedia has a list of common [file signatures](https://en.wikipedia.org/wiki/List_of_file_signatures) to help us with the above.
 
-[Decodify](https://github.com/s0md3v/Decodify) is a tool that can help with decode guessing.
+[Decodify](https://github.com/s0md3v/Decodify) is a tool that can help with decode guessing. Also, [Dencode](https://dencode.com/en).
+
+Base 64 Alphabet:  A-Za-z0-9+/=  (i.e., if you see just these it may be b64 encoded.)
+Hex: a-f and 0-9
+URL: Will use percent encoding in place of reserved characters
+
+[Cipher Identifier and analyzer](https://www.boxentriq.com/code-breaking/cipher-identifier#hexadecimal-code)
+
+
+### Remember me token
+A rememberme token is a session cookie that lasts for a longer time than usual. Often 7 days to a month. Moste attacks that are used against password reset tokens and generic cookies can be mounted against rememberme tokens.
+
+### Encrypted or encoded token.
+Cookies can contain the result of the encryption of a sequence of data. A weak crypto algorithm will lead to privilege escalation or authentication bypass, just like plain encoding could.
+
+Web apps often encode tokens through hex encoding or through base64.
+
+Something like [Cyberchef](https://gchq.github.io/CyberChef/) can be used to play a round with encoded strings to try and see how they were encoded. Other clues like the [[Cybersecurity/Bug Bounties/Magic Bytes\|magic bytes]] remain after encode.
+
+Base64 is often used when there is a requirement to move date to and from a web application.
+
+Sometimes the cookie is also set with random or pseudo-random values so an easy decode won't always lead toa successful attack.
+
+## Insecure Token Handling
+
+Tokens are different from cookies in that tokens are explicitly used to send authorization data. When we use token-based authorization, we receive an ID token from a trusted authority. This is often referred to as JSON Web token and token-based authorization.
+
+### Token Lifetime
+
+Tokens should expire after the user has been inactive for a given amount of time. And should also expire even if there is activity after a given amount of time. If it never expires, then the Session Fixation attack can be done.
+
+### Session Fixation
+
+A very important rule is that cookie tokens should expire as soon as the access level changes. This occurs when a  user is phised with a link taht has a fixed session value that is unkown to the web application. the web app should bounce the user, but when the user logs in the sessionid remains the same and te attacker can reuse it.
+
+### Token in URL
+
+In the past, tokens could be found in URLs when browsers would refer beause theye would refer with the whole URL in it. Modern browser strip this data. If we can get to web server logs we may be able to obtain many valid tokens. This is covered in [[Cybersecurity/Bug Bounties/File Inclusion - Directory Traversal\|File Inclusion - Directory Traversal]]
+
+### Session Security
+
+Secure session handling starts from giving the client user as little information as possible. Cookies shold be only a random sequence. The web application should hold the details. Session security should also cover multiple logins for the same user and concurrent usage of the same session token from different endpoints.
+
+### Cookie Security
+
+Cookies security should always be checked since cookies are used to send and receive tokens. They should be set as httponly and secure.
