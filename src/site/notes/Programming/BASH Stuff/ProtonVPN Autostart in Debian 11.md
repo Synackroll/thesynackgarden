@@ -8,7 +8,7 @@
 ```bash
 [Desktop Entry]
 Name=Proton VPN
-Exec=/home/synackroll/.protonstartup.sh
+Exec=/home/[user]/.protonstartup.sh
 Terminal=false
 Type=Application
 Icon=protonvpn-logo
