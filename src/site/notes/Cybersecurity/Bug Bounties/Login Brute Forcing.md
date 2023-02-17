@@ -117,7 +117,7 @@ Run it in interactive mode with the -i argument and it will ask you a bnch of qu
 
 We can use sed and REGEX to remove passwords that don't meet particular policies, if known.
 ```bash
-sed -ri '/^.{,7}$/d' ginny.txt            # remove shorter than 8
+sed -ri '/^.{,7}$/dginny.txt            # remove shorter than 8
 sed -ri '/[!-/:-@\[-`\{-~]+/!d' ginny.txt # remove no special chars
 sed -ri '/[0-9]+/!d' ginny.txt            # remove no numbers
 ```
