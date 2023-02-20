@@ -11,7 +11,7 @@ Injection occurs when user-controlled input is misinterpreted as part of the web
 Some examples:
 * OS Command Injection
 * Code Injection
-* [[Structured Query Language (SQL) Injection Fundamentals\|SQL Injection]]
+* [[Cybersecurity/Bug Bounties/SQL Injection/Structured Query Language (SQL) Injection Fundamentals\|SQL Injection]]
 * [[Cybersecurity/Bug Bounties/Cross-Site Scripting/Cross-Site Scripting (XSS)\|Cross-Site Scripting (XSS)]]/HTML Injection
 * LDAP Injection
 * Etc.
