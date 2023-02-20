@@ -281,7 +281,7 @@ A very important rule is that cookie tokens should expire as soon as the access 
 
 ### Token in URL
 
-In the past, tokens could be found in URLs when browsers would refer beause theye would refer with the whole URL in it. Modern browser strip this data. If we can get to web server logs we may be able to obtain many valid tokens. This is covered in [[Cybersecurity/Bug Bounties/File Inclusion - Directory Traversal\|File Inclusion - Directory Traversal]]
+In the past, tokens could be found in URLs when browsers would refer beause theye would refer with the whole URL in it. Modern browser strip this data. If we can get to web server logs we may be able to obtain many valid tokens. This is covered in [[Cybersecurity/Bug Bounties/File Inclusion\|File Inclusion]]
 
 ### Session Security
 
