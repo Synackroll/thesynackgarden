@@ -3,14 +3,17 @@
 ---
 
 
-Sometimes it's nice to alias a long command. One of the examples was:
+Aliases can be set by doing:
 
-`alias cs='curl -s http://209.97.185.157:32726/index.php?language=./profile_images/shell.gif&cmd='`
+alias cmd='definition'
 
-and 
-`alias fl='sed -n '\''/<h2>Containers<\/h2>/,/<p class="read-more">/p'\'
+They should be replacements for long commands. If you want to have a command where you insert something (like for using an LFI) you should use a function with the variable portion of the command stored in a variable.
 
-Then you could use this with a command by entereing:
-${cs}id | fl
+something like:
+```
+my_function(){
+	echo This is an example of using a $1 variable as an argument.
+}
+```
 
-It took me a while to find out how to make it so that bash wouldn't insert a space between the end of the alias and the command.
+
