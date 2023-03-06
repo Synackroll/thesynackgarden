@@ -350,7 +350,7 @@ Trying david / Spring2016 Time: 00:00:01 <============> (474 / 474) 100.00% Time
  | Username: admin, Password: sunshine1
 ```
 
-## [[Cybersecurity/Remote Code Execution\|RCE]] via the Theme Editor
+## [[Cybersecurity/Penetration Tester/Remote Code Execution\|RCE]] via the Theme Editor
 
 ### Attacking the WordPress Backend
 
