@@ -8,7 +8,7 @@ Many web apps process XML data as part of their functionality. When the backend 
 
 XML External Entity Inection (XXE) occurs when XML data is taken from user-controlled input without properly sanitizing or safely parsing it.
 
-[[Programming/Extensible Markup Language (XML)\|Extensible Markup Language (XML)]] is a common markup lanauge designed for the transfer and storage of data and documents in various types of applications.
+[[Cybersecurity/Bug Bounty Hunter/Extensible Markup Language (XML)\|Extensible Markup Language (XML)]] is a common markup lanauge designed for the transfer and storage of data and documents in various types of applications.
 
 A document might look like:
 Example:
