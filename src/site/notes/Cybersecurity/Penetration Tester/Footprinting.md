@@ -1740,7 +1740,7 @@ Connected to 10.129.14.128.
 Escape character is '^]'.
 220 ESMTP Server 
 
-
+exi
 HELO mail1.inlanefreight.htb
 
 250 mail1.inlanefreight.htb
@@ -2058,6 +2058,26 @@ In the documentation of Dovecot, we can find the individual [core settings](http
 
 Nice IMAP crib sheet [here](https://donsutherland.org/crib/imap).
 
+List of Message Parts here.  They can be Fetched with `1 FETCH # BODY[PART]`
+```
+
+    ALL: Macro equivalent to: (FLAGS INTERNALDATE RFC822.SIZE ENVELOPE)
+    FAST: Macro equivalent to: (FLAGS INTERNALDATE RFC822.SIZE)
+    FULL: Macro equivalent to: (FLAGS INTERNALDATE RFC822.SIZE ENVELOPE BODY)
+    BODY: Non-extensible form of BODYSTRUCTURE.
+    BODY[<section>]<<partial>>: The text of a particular body section. The section specification is a set of zero or more part specifiers delimited by periods. A part specifier is either a part number or one of the following: HEADER, HEADER.FIELDS, HEADER.FIELDS.NOT, MIME, and TEXT. An empty section specification refers to the entire message, including the header. You may even select only parts of a multipart MIME message and even specific octets within that part, see RFC 3501#section-6.4.5 for more details.
+    BODY.PEEK[<section>]<<partial>>: An alternate form of BODY[<section>] that does not implicitly set the \Seen flag.
+    BODYSTRUCTURE: The MIME body structure of the message. This is computed by the server by parsing the MIME header fields in the header and body MIME headers.
+    ENVELOPE: The envelope structure of the message. This is computed by the server by parsing the message header into the component parts, defaulting various fields as necessary.
+    FLAGS: The flags that are set for this message.
+    INTERNALDATE: The internal date of the message.
+    RFC822: Functionally equivalent to BODY[], differing in the syntax of the resulting untagged FETCH data in that the full RFC822 message is returned.
+    RFC822.HEADER: Functionally equivalent to BODY.PEEK[HEADER], with RFC822 header syntax returned.
+    RFC822.SIZE: The size of the message.
+    RFC822.TEXT: Functionally equivalent to BODY[TEXT], differing in the syntax of the resulting untagged FETCH data as RFC822.TEXT is returned.
+    UID: The unique identifier for the message.
+
+```
 
 ### POP3 Commands
 
@@ -2343,4 +2363,1183 @@ SSL-Session:
 ---
 read R BLOCK
 * OK [CAPABILITY IMAP4rev1 SASL-IR LOGIN-REFERRALS ID ENABLE IDLE LITERAL+ AUTH=PLAIN] HTB-Academy IMAP4 v.0.21.4
+```
+
+## SNMP
+
+Created to monitor network devices. Can be used to handle configuration tasks and change settings remotely. Current version is SNmPv3.
+
+Transmits control commands using agents over UDP port 161.
+
+Enables the use of so-called traps over UDP port 162.
+
+For a client and server to exchange respective values, the SNMP objects must have unique addresses known on both sides.
+
+### MIB
+
+`Management Information Base` (`MIB`) MIB is an independent format for storing device information. A MIB is a text file in which all queryable SNMP objects of a device are listed in a standardized tree hierarchy.
+
+Contains an `Object Identifier (OID)` 
+
+### OID
+The OID represents a node in a hierarchical namespace. A sequence of numbers uniquely identifies each node.
+
+### SNMPv1
+
+First version of the protocol. Still in use in many networks.
+- No built-in authentication mechanism.
+- No encryption support.
+
+### SNMPv2
+
+The version of this today is v2c. C for community.
+- No built-in encryption
+
+### SNMPv3
+
+- Has authentication using username and password.
+- Has transmission encryption via pre-shared key.
+- Significantly more configuration options than v2c
+
+### Community Strings
+
+Can be thought of as passwords that are used to determine whether the requested information can be viewed or not. But everytime the community strings are sent, they're unencrypted and can be read.
+
+## Default Configuration
+
+The default configuration of the SNMP daemon defines the basic settings for the service, which include the IP addresses, ports, MIB, OIDs, authentication, and community strings.
+
+### SNMP Daemon Config
+
+```
+$ cat /etc/snmp/snmpd.conf | grep -v "#" | sed -r '/^\s*$/d'
+
+sysLocation    Sitting on the Dock of the Bay
+sysContact     Me <me@example.org>
+sysServices    72
+master  agentx
+agentaddress  127.0.0.1,[::1]
+view   systemonly  included   .1.3.6.1.2.1.1
+view   systemonly  included   .1.3.6.1.2.1.25.1
+rocommunity  public default -V systemonly
+rocommunity6 public default -V systemonly
+rouser authPrivUser authpriv -V systemonly
+```
+
+### Dangerous Settings
+
+<table class="table table-striped text-left">
+<thead>
+<tr>
+<th><strong>Settings</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rwuser noauth</code></td>
+<td>Provides access to the full OID tree without authentication.</td>
+</tr>
+<tr>
+<td><code>rwcommunity &lt;community string&gt; &lt;IPv4 address&gt;</code></td>
+<td>Provides access to the full OID tree regardless of where the requests were sent from.</td>
+</tr>
+<tr>
+<td><code>rwcommunity6 &lt;community string&gt; &lt;IPv6 address&gt;</code></td>
+<td>Same access as with <code>rwcommunity</code> with the difference of using IPv6.</td>
+</tr>
+</tbody>
+</table>
+
+### Footprinting the Service
+
+For footprinting SNMP, we can use tools like `snmpwalk`, `onesixtyone`, and `braa`. `Snmpwalk` is used to query the OIDs with their information. `Onesixtyone` can be used to brute-force the names of the community strings since they can be named arbitrarily by the administrator. Since these community strings can be bound to any source, identifying the existing community strings can take quite some time.
+
+#### SNMPwalk
+```shell-session
+$ snmpwalk -v2c -c public 10.129.14.128
+```
+
+#### OneSixtyOne
+
+```shell-session
+$ sudo apt install onesixtyone
+$ onesixtyone -c /opt/useful/SecLists/Discovery/SNMP/snmp.txt 10.129.14.128
+
+Scanning 1 hosts, 3220 communities
+10.129.14.128 [public] Linux htb 5.11.0-37-generic #41~20.04.2-Ubuntu SMP Fri Sep 24 09:06:38 UTC 2021 x86_64
+```
+
+- Often there are patterns to community strings.
+- [crunch](https://secf00tprint.github.io/blog/passwords/crunch/advanced/en) to create custom wordlists. 
+- Once we know a community string, we can use it with [braa](https://github.com/mteg/braa) to brute-force the individual OIDs and enumerate the information behind them.
+
+## [[Cybersecurity/Bug Bounty Hunter/SQL Injection/MySQL\|MySQL]]
+
+### MySQL Clients
+
+The MySQL client retrieves and edits data using structured queries to the database engine. Inserting, deleting, modifying, and retrieving data, is done using the SQL database language. Therefore, MySQL is suitable for managing many different databases to which clients can send multiple queries simultaneously. Depending on the use of the database, access is possible via an internal network or the public Internet.
+
+### MySQL Databases
+
+Good for dynamic web sites.  Needs a [[Cybersecurity/Bug Bounty Hunter/LAMP\|LAMP]] stack or LEMP with Nginx. The mySQL databse is the place where content required by PHP scripts is stored. Things like: Headers, Texts, MetaTags, Forms, Customers, Email Addresses.  Basically anything.
+
+### MySQL Commands
+
+The database tranlates commands internally into executable code and performs the requested actions. Error messages can give important information for [[Cybersecurity/Bug Bounty Hunter/SQL Injection/Structured Query Language (SQL) Injection Fundamentals\|SQL Injection]]. If the applications processes the data and query correctly the client gets the generated information.
+
+`MariaDB` is often connected tih MySQL and is a fork of the original code.
+
+### Default Configuration
+
+Database administration is complex enough that there are database administrators who deal with nothing but databases.
+
+```shell-session
+$ sudo apt install mysql-server -y
+$ cat /etc/mysql/mysql.conf.d/mysqld.cnf | grep -v "#" | sed -r '/^\s*$/d'
+
+[client]
+port		= 3306
+socket		= /var/run/mysqld/mysqld.sock
+
+[mysqld_safe]
+pid-file	= /var/run/mysqld/mysqld.pid
+socket		= /var/run/mysqld/mysqld.sock
+nice		= 0
+
+[mysqld]
+skip-host-cache
+skip-name-resolve
+user		= mysql
+pid-file	= /var/run/mysqld/mysqld.pid
+socket		= /var/run/mysqld/mysqld.sock
+port		= 3306
+basedir		= /usr
+datadir		= /var/lib/mysql
+tmpdir		= /tmp
+lc-messages-dir	= /usr/share/mysql
+explicit_defaults_for_timestamp
+
+symbolic-links=0
+
+!includedir /etc/mysql/conf.d/
+```
+
+#### Dangerous Settings
+
+Many things can be misconfigured with MySQL. We can look in more detail at the [MySQL reference](https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html) to determine which options can be made in the server configuration. The main options that are security-relevant are:
+
+<table class="table table-striped text-left">
+<thead>
+<tr>
+<th><strong>Settings</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>user</code></td>
+<td>Sets which user the MySQL service will run as.</td>
+</tr>
+<tr>
+<td><code>password</code></td>
+<td>Sets the password for the MySQL user.</td>
+</tr>
+<tr>
+<td><code>admin_address</code></td>
+<td>The IP address on which to listen for TCP/IP connections on the administrative network interface.</td>
+</tr>
+<tr>
+<td><code>debug</code></td>
+<td>This variable indicates the current debugging settings</td>
+</tr>
+<tr>
+<td><code>sql_warnings</code></td>
+<td>This variable controls whether single-row INSERT statements produce an information string if warnings occur.</td>
+</tr>
+<tr>
+<td><code>secure_file_priv</code></td>
+<td>This variable is used to limit the effect of data import and export operations.</td>
+</tr>
+</tbody>
+</table>
+
+The settings `user`, `password`, and `admin_address` are security-relevant because the entries are made in plain text. Often, the rights for the configuration file of the MySQL server are not assigned correctly. If we get another way to read files or even a shell, we can see the file and the username and password for the MySQL server. Suppose there are no other security measures to prevent unauthorized access. In that case, the entire database and all the existing customers' information, email addresses, passwords, and personal data can be viewed and even edited.
+
+### Footprinting the Service
+
+Usually runs on TCP Port 3306.  Scan with Nmap:
+
+```shell-session
+$ sudo nmap 10.129.14.128 -sV -sC -p3306 --script mysql*
+
+Starting Nmap 7.80 ( https://nmap.org ) at 2021-09-21 00:53 CEST
+Nmap scan report for 10.129.14.128
+Host is up (0.00021s latency).
+
+PORT     STATE SERVICE     VERSION
+3306/tcp open  nagios-nsca Nagios NSCA
+| mysql-brute: 
+|   Accounts: 
+|     root:<empty> - Valid credentials
+|_  Statistics: Performed 45010 guesses in 5 seconds, average tps: 9002.0
+|_mysql-databases: ERROR: Script execution failed (use -d to debug)
+|_mysql-dump-hashes: ERROR: Script execution failed (use -d to debug)
+| mysql-empty-password: 
+|_  root account has empty password
+| mysql-enum: 
+|   Valid usernames: 
+|     root:<empty> - Valid credentials
+|     netadmin:<empty> - Valid credentials
+|     guest:<empty> - Valid credentials
+|     user:<empty> - Valid credentials
+|     web:<empty> - Valid credentials
+|     sysadmin:<empty> - Valid credentials
+|     administrator:<empty> - Valid credentials
+|     webadmin:<empty> - Valid credentials
+|     admin:<empty> - Valid credentials
+|     test:<empty> - Valid credentials
+|_  Statistics: Performed 10 guesses in 1 seconds, average tps: 10.0
+| mysql-info: 
+|   Protocol: 10
+|   Version: 8.0.26-0ubuntu0.20.04.1
+|   Thread ID: 13
+|   Capabilities flags: 65535
+|   Some Capabilities: SupportsLoadDataLocal, SupportsTransactions, Speaks41ProtocolOld, LongPassword, DontAllowDatabaseTableColumn, Support41Auth, IgnoreSigpipes, SwitchToSSLAfterHandshake, FoundRows, InteractiveClient, Speaks41ProtocolNew, ConnectWithDatabase, IgnoreSpaceBeforeParenthesis, LongColumnFlag, SupportsCompression, ODBCClient, SupportsMultipleStatments, SupportsAuthPlugins, SupportsMultipleResults
+|   Status: Autocommit
+|   Salt: YTSgMfqvx\x0F\x7F\x16\&\x1EAeK>0
+|_  Auth Plugin Name: caching_sha2_password
+|_mysql-users: ERROR: Script execution failed (use -d to debug)
+|_mysql-variables: ERROR: Script execution failed (use -d to debug)
+|_mysql-vuln-cve2012-2122: ERROR: Script execution failed (use -d to debug)
+MAC Address: 00:00:00:00:00:00 (VMware)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 11.21 seconds
+```
+
+#### Interaction with mySQL Database
+```shell-session
+$ mysql -u root -h 10.129.14.132
+
+ERROR 1045 (28000): Access denied for user 'root'@'10.129.14.1' (using password: NO)
+
+$ mysql -u root -pP4SSw0rd -h 10.129.14.128
+
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MySQL connection id is 150165
+Server version: 8.0.27-0ubuntu0.20.04.1 (Ubuntu)                                                         
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.                                     
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.                           
+      
+MySQL [(none)]> show databases;                                                                          
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+4 rows in set (0.006 sec)
+
+
+MySQL [(none)]> select version();
++-------------------------+
+| version()               |
++-------------------------+
+| 8.0.27-0ubuntu0.20.04.1 |
++-------------------------+
+1 row in set (0.001 sec)
+
+
+MySQL [(none)]> use mysql;
+MySQL [mysql]> show tables;
++------------------------------------------------------+
+| Tables_in_mysql                                      |
++------------------------------------------------------+
+| columns_priv                                         |
+| component                                            |
+| db                                                   |
+| default_roles                                        |
+| engine_cost                                          |
+| func                                                 |
+| general_log                                          |
+| global_grants                                        |
+| gtid_executed                                        |
+| help_category                                        |
+| help_keyword                                         |
+| help_relation                                        |
+| help_topic                                           |
+| innodb_index_stats                                   |
+| innodb_table_stats                                   |
+| password_history                                     |
+...SNIP...
+| user                                                 |
++------------------------------------------------------+
+37 rows in set (0.002 sec)
+```
+
+<table class="table table-striped text-left">
+<thead>
+<tr>
+<th><strong>Command</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mysql -u &lt;user&gt; -p&lt;password&gt; -h &lt;IP address&gt;</code></td>
+<td>Connect to the MySQL server. There should <strong>not</strong> be a space between the '-p' flag, and the password.</td>
+</tr>
+<tr>
+<td><code>show databases;</code></td>
+<td>Show all databases.</td>
+</tr>
+<tr>
+<td><code>use &lt;database&gt;;</code></td>
+<td>Select one of the existing databases.</td>
+</tr>
+<tr>
+<td><code>show tables;</code></td>
+<td>Show all available tables in the selected database.</td>
+</tr>
+<tr>
+<td><code>show columns from &lt;table&gt;;</code></td>
+<td>Show all columns in the selected database.</td>
+</tr>
+<tr>
+<td><code>select * from &lt;table&gt;;</code></td>
+<td>Show everything in the desired table.</td>
+</tr>
+<tr>
+<td><code>select * from &lt;table&gt; where &lt;column&gt; = "&lt;string&gt;";</code></td>
+<td>Search for needed <code>string</code> in the desired table.</td>
+</tr>
+</tbody>
+</table>
+
+## [[Cybersecurity/Penetration Tester/MSSQL\|MSSQL]]
+
+Microsoft SQL (MSSQL) is microsoft's relational database management system. Closed Source.
+
+### MSSQL Clients
+
+SQL Server Management Studio (SSMS) comes as a feature that can be installed with MSSQL.
+
+### Default Databases
+
+<table class="table table-striped text-left">
+<thead>
+<tr>
+<th>Default System Database</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>master</code></td>
+<td>Tracks all system information for an SQL server instance</td>
+</tr>
+<tr>
+<td><code>model</code></td>
+<td>Template database that acts as a structure for every new database created. Any setting changed in the model database will be reflected in any new database created after changes to the model database</td>
+</tr>
+<tr>
+<td><code>msdb</code></td>
+<td>The SQL Server Agent uses this database to schedule jobs &amp; alerts</td>
+</tr>
+<tr>
+<td><code>tempdb</code></td>
+<td>Stores temporary objects</td>
+</tr>
+<tr>
+<td><code>resource</code></td>
+<td>Read-only database containing system objects included with SQL server</td>
+</tr>
+</tbody>
+</table>
+
+### Default Configuration
+
+When an admin initially installs and configures MSSQL to be network accessible, the SQL service will likely run as `NT SERVICE\MSSQLSERVER`. Connecting from the client-side is possible through Windows Authentication, and by default, encryption is not enforced when attempting to connect.
+
+Authentication being set to `Windows Authentication` means that the underlying Windows OS will process the login request and use either the local SAM database or the domain controller (hosting Active Directory) before allowing connectivity to the database management system.
+
+### Dangerous Settings
+
+This is not an extensive list because there are countless ways MSSQL databases can be configured by admins based on the needs of their respective organizations. We may benefit from looking into the following:
+
+-   MSSQL clients not using encryption to connect to the MSSQL server
+    
+-   The use of self-signed certificates when encryption is being used. It is possible to spoof self-signed certificates
+    
+-   The use of [named pipes](https://docs.microsoft.com/en-us/sql/tools/configuration-manager/named-pipes-properties?view=sql-server-ver15)
+    
+-   Weak & default `sa` credentials. Admins may forget to disable this account
+
+### Footprinting the Service
+
+#### Nmap
+
+```shell-session
+$ sudo nmap --script ms-sql-info,ms-sql-empty-password,ms-sql-xp-cmdshell,ms-sql-config,ms-sql-ntlm-info,ms-sql-tables,ms-sql-hasdbaccess,ms-sql-dac,ms-sql-dump-hashes --script-args mssql.instance-port=1433,mssql.username=sa,mssql.password=,mssql.instance-name=MSSQLSERVER -sV -p 1433 10.129.201.248
+
+Starting Nmap 7.91 ( https://nmap.org ) at 2021-11-08 09:40 EST
+Nmap scan report for 10.129.201.248
+Host is up (0.15s latency).
+
+PORT     STATE SERVICE  VERSION
+1433/tcp open  ms-sql-s Microsoft SQL Server 2019 15.00.2000.00; RTM
+| ms-sql-ntlm-info: 
+|   Target_Name: SQL-01
+|   NetBIOS_Domain_Name: SQL-01
+|   NetBIOS_Computer_Name: SQL-01
+|   DNS_Domain_Name: SQL-01
+|   DNS_Computer_Name: SQL-01
+|_  Product_Version: 10.0.17763
+
+Host script results:
+| ms-sql-dac: 
+|_  Instance: MSSQLSERVER; DAC port: 1434 (connection failed)
+| ms-sql-info: 
+|   Windows server name: SQL-01
+|   10.129.201.248\MSSQLSERVER: 
+|     Instance name: MSSQLSERVER
+|     Version: 
+|       name: Microsoft SQL Server 2019 RTM
+|       number: 15.00.2000.00
+|       Product: Microsoft SQL Server 2019
+|       Service pack level: RTM
+|       Post-SP patches applied: false
+|     TCP port: 1433
+|     Named pipe: \\10.129.201.248\pipe\sql\query
+|_    Clustered: false
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 8.52 seconds
+```
+
+#### MSSQL Ping in Metasploit
+
+```shell-session
+msf6 auxiliary(scanner/mssql/mssql_ping) > set rhosts 10.129.201.248
+
+rhosts => 10.129.201.248
+
+
+msf6 auxiliary(scanner/mssql/mssql_ping) > run
+
+[*] 10.129.201.248:       - SQL Server information for 10.129.201.248:
+[+] 10.129.201.248:       -    ServerName      = SQL-01
+[+] 10.129.201.248:       -    InstanceName    = MSSQLSERVER
+[+] 10.129.201.248:       -    IsClustered     = No
+[+] 10.129.201.248:       -    Version         = 15.0.2000.5
+[+] 10.129.201.248:       -    tcp             = 1433
+[+] 10.129.201.248:       -    np              = \\SQL-01\pipe\sql\query
+[*] 10.129.201.248:       - Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+```
+
+#### Connecting with Mssqlclient.py
+
+```shell-session
+$ python3 mssqlclient.py Administrator@10.129.201.248 -windows-auth
+
+Impacket v0.9.22 - Copyright 2020 SecureAuth Corporation
+
+Password:
+[*] Encryption required, switching to TLS
+[*] ENVCHANGE(DATABASE): Old Value: master, New Value: master
+[*] ENVCHANGE(LANGUAGE): Old Value: , New Value: us_english
+[*] ENVCHANGE(PACKETSIZE): Old Value: 4096, New Value: 16192
+[*] INFO(SQL-01): Line 1: Changed database context to 'master'.
+[*] INFO(SQL-01): Line 1: Changed language setting to us_english.
+[*] ACK: Result: 1 - Microsoft SQL Server (150 7208) 
+[!] Press help for extra shell commands
+
+SQL> select name from sys.databases
+
+name                                                                                                                               
+
+--------------------------------------------------------------------------------------
+
+master                                                                                                                             
+
+tempdb                                                                                                                             
+
+model                                                                                                                              
+
+msdb                                                                                                                               
+
+Transactions    
+```
+
+## [[Cybersecurity/Penetration Tester/Intelligent Platform Management Interface\|Intelligent Platform Management Interface]]
+
+IPMI Communicates over port 623 UDP. Systems that use the IPMI protocol are called Basedboard Management Controllers (BMCs). Typically embedded as ARM systems running Linux and connected directly to the host's motherboard.
+
+Gaining Access to a BMC is nearly equivalent to physical access toa system. Many BMCs expose a web-based management console.
+
+### Footprinting the Service
+
+#### Nmap
+
+```shell-session
+sudo nmap -sU --script ipmi-version -p 623 ilo.inlanfreight.local
+
+Starting Nmap 7.92 ( https://nmap.org ) at 2021-11-04 21:48 GMT
+Nmap scan report for ilo.inlanfreight.local (172.16.2.2)
+Host is up (0.00064s latency).
+
+PORT    STATE SERVICE
+623/udp open  asf-rmcp
+| ipmi-version:
+|   Version:
+|     IPMI-2.0
+|   UserAuth:
+|   PassAuth: auth_user, non_null_user
+|_  Level: 2.0
+MAC Address: 14:03:DC:674:18:6A (Hewlett Packard Enterprise)
+
+Nmap done: 1 IP address (1 host up) scanned in 0.46 seconds
+```
+
+#### Metasploit Version Scan
+
+We can also use the Metasploit scanner module [IPMI Information Discovery (auxiliary/scanner/ipmi/ipmi_version)](https://www.rapid7.com/db/modules/auxiliary/scanner/ipmi/ipmi_version/).
+
+```shell-session
+msf6 > use auxiliary/scanner/ipmi/ipmi_version 
+msf6 auxiliary(scanner/ipmi/ipmi_version) > set rhosts 10.129.42.195
+msf6 auxiliary(scanner/ipmi/ipmi_version) > show options 
+
+Module options (auxiliary/scanner/ipmi/ipmi_version):
+
+   Name       Current Setting  Required  Description
+   ----       ---------------  --------  -----------
+   BATCHSIZE  256              yes       The number of hosts to probe in each set
+   RHOSTS     10.129.42.195    yes       The target host(s), range CIDR identifier, or hosts file with syntax 'file:<path>'
+   RPORT      623              yes       The target port (UDP)
+   THREADS    10               yes       The number of concurrent threads
+
+
+msf6 auxiliary(scanner/ipmi/ipmi_version) > run
+
+[*] Sending IPMI requests to 10.129.42.195->10.129.42.195 (1 hosts)
+[+] 10.129.42.195:623 - IPMI - IPMI-2.0 UserAuth(auth_msg, auth_user, non_null_user) PassAuth(password, md5, md2, null) Level(1.5, 2.0) 
+[*] Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+```
+
+Often BMCs have their default passwords.
+
+<table class="table table-striped text-left">
+<thead>
+<tr>
+<th>Product</th>
+<th>Username</th>
+<th>Password</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dell iDRAC</td>
+<td>root</td>
+<td>calvin</td>
+</tr>
+<tr>
+<td>HP iLO</td>
+<td>Administrator</td>
+<td>randomized 8-character string consisting of numbers and uppercase letters</td>
+</tr>
+<tr>
+<td>Supermicro IPMI</td>
+<td>ADMIN</td>
+<td>ADMIN</td>
+</tr>
+</tbody>
+</table>
+
+### Dangerous Settings
+
+If default credentials do not work to access a BMC, we can turn to a [flaw](http://fish2.com/ipmi/remote-pw-cracking.html) in the RAKP protocol in IPMI 2.0. During the authentication process, the server sends a salted SHA1 or MD5 hash of the user's password to the client before authentication takes place. This can be leveraged to obtain the password hash for ANY valid user account on the BMC. These password hashes can then be cracked offline using a dictionary attack using `Hashcat` mode `7300`. In the event of an HP iLO using a factory default password, we can use this Hashcat mask attack command `hashcat -m 7300 ipmi.txt -a 3 ?1?1?1?1?1?1?1?1 -1 ?d?u` which tries all combinations of upper case letters and numbers for an eight-character password.
+
+To retrieve IPMI hashes, we can use the Metasploit [IPMI 2.0 RAKP Remote SHA1 Password Hash Retrieval](https://www.rapid7.com/db/modules/auxiliary/scanner/ipmi/ipmi_dumphashes/) module.
+
+#### Metasploit Dumping Hashes
+
+```shell-session
+msf6 > use auxiliary/scanner/ipmi/ipmi_dumphashes 
+msf6 auxiliary(scanner/ipmi/ipmi_dumphashes) > set rhosts 10.129.42.195
+msf6 auxiliary(scanner/ipmi/ipmi_dumphashes) > show options 
+
+Module options (auxiliary/scanner/ipmi/ipmi_dumphashes):
+
+   Name                 Current Setting                                                    Required  Description
+   ----                 ---------------                                                    --------  -----------
+   CRACK_COMMON         true                                                               yes       Automatically crack common passwords as they are obtained
+   OUTPUT_HASHCAT_FILE                                                                     no        Save captured password hashes in hashcat format
+   OUTPUT_JOHN_FILE                                                                        no        Save captured password hashes in john the ripper format
+   PASS_FILE            /usr/share/metasploit-framework/data/wordlists/ipmi_passwords.txt  yes       File containing common passwords for offline cracking, one per line
+   RHOSTS               10.129.42.195                                                      yes       The target host(s), range CIDR identifier, or hosts file with syntax 'file:<path>'
+   RPORT                623                                                                yes       The target port
+   THREADS              1                                                                  yes       The number of concurrent threads (max one per host)
+   USER_FILE            /usr/share/metasploit-framework/data/wordlists/ipmi_users.txt      yes       File containing usernames, one per line
+
+
+
+msf6 auxiliary(scanner/ipmi/ipmi_dumphashes) > run
+
+[+] 10.129.42.195:623 - IPMI - Hash found: ADMIN:8e160d4802040000205ee9253b6b8dac3052c837e23faa631260719fce740d45c3139a7dd4317b9ea123456789abcdefa123456789abcdef140541444d494e:a3e82878a09daa8ae3e6c22f9080f8337fe0ed7e
+[+] 10.129.42.195:623 - IPMI - Hash for user 'ADMIN' matches password 'ADMIN'
+[*] Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+```
+
+IPMI is very common in network environments since sysadmins need to be able to access servers remotely in the event of an outage or perform certain maintenance tasks that they would traditionally have had to be physically in front of the server to complete. This ease of administration comes with the risk of exposing password hashes to anyone on the network and can lead to unauthorized access, system disruption, and even remote code execution. Checking for IPMI should be part of our internal penetration test playbook for any environment we find ourselves assessing.
+
+## Linux Remote Management Protocols
+
+Appcliations and services that can be found on almost every serverin a public network.
+
+### SSH
+
+[Secure Shell](https://en.wikipedia.org/wiki/Secure_Shell) (`SSH`) enables two computers to establish an encrypted and direct connection within a possibly insecure network on the standard port `TCP 22`.
+
+The protocol runs on all common operating systems. [OpenBSD SSH](https://www.openssh.com/) (`OpenSSH`) server on Linux distributions is an open-source fork of the original and commercial `SSH` server from SSH Communication Security. Accordingly, there are two competing protocols: `SSH-1` and `SSH-2`.
+
+`SSH-2`, also known as SSH version 2, is a more advanced protocol than SSH version 1 in encryption, speed, stability, and security. For example, `SSH-1` is vulnerable to `MITM` attacks, whereas SSH-2 is not.
+
+[Six different auth methods](https://www.golinuxcloud.com/openssh-authentication-methods-sshd-config/):
+
+1.  Password authentication
+2.  Public-key authentication
+3.  Host-based authentication
+4.  Keyboard authentication
+5.  Challenge-response authentication
+6.  GSSAPI authentication
+
+#### Public Key Authentication
+
+The SSH server and client first authenticate themselves. The server sends a certificate to the client to verify that it is the correct server. After server authenitcation the client proves to the server that it has access. A password can be used, but then the users have to enter the password everytime they log onto another server during the same session. 
+
+Use of a public key and private key pair is an alternative to this. The private key is created individually for the user's computer and secured with a passphrase that should be longer than a typical password.
+
+Public keys are stored on the server. The server creates a cryptographic problem with the client's public key and sends it to the client. The client decrypts the problme with its private key and sends the solution. During a session the users only enter the passphrase once to connect to any number of servers.
+
+#### Default Configuration
+
+The [sshd_config](https://www.ssh.com/academy/ssh/sshd_config) file, responsible for the OpenSSH server, has only a few of the settings configured by default. However, the default configuration includes X11 forwarding, which contained a command injection vulnerability in version 7.2p1 of OpenSSH in 2016. Nevertheless, we do not need a GUI to manage our servers.
+
+```shell-session
+$ cat /etc/ssh/sshd_config  | grep -v "#" | sed -r '/^\s*$/d'
+
+Include /etc/ssh/sshd_config.d/*.conf
+ChallengeResponseAuthentication no
+UsePAM yes
+X11Forwarding yes
+PrintMotd no
+AcceptEnv LANG LC_*
+Subsystem       sftp    /usr/lib/openssh/sftp-server
+```
+
+#### Dangerous Settings
+
+<table class="table table-striped text-left">
+<thead>
+<tr>
+<th><strong>Setting</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PasswordAuthentication yes</code></td>
+<td>Allows password-based authentication.</td>
+</tr>
+<tr>
+<td><code>PermitEmptyPasswords yes</code></td>
+<td>Allows the use of empty passwords.</td>
+</tr>
+<tr>
+<td><code>PermitRootLogin yes</code></td>
+<td>Allows to log in as the root user.</td>
+</tr>
+<tr>
+<td><code>Protocol 1</code></td>
+<td>Uses an outdated version of encryption.</td>
+</tr>
+<tr>
+<td><code>X11Forwarding yes</code></td>
+<td>Allows X11 forwarding for GUI applications.</td>
+</tr>
+<tr>
+<td><code>AllowTcpForwarding yes</code></td>
+<td>Allows forwarding of TCP ports.</td>
+</tr>
+<tr>
+<td><code>PermitTunnel</code></td>
+<td>Allows tunneling.</td>
+</tr>
+<tr>
+<td><code>DebianBanner yes</code></td>
+<td>Displays a specific banner when logging in.</td>
+</tr>
+</tbody>
+</table>
+
+
+### Footprinting the Service
+
+One of the tools we can use to fingerprint the SSH server is [ssh-audit](https://github.com/jtesta/ssh-audit). It checks the client-side and server-side configuration and shows some general information and which encryption algorithms are still used by the client and server. Of course, this could be exploited by attacking the server or client at the cryptic level later.
+
+```shell-session
+$ git clone https://github.com/jtesta/ssh-audit.git && cd ssh-audit
+
+$ ./ssh-audit.py 10.129.14.132
+
+# general
+(gen) banner: SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.3
+(gen) software: OpenSSH 8.2p1
+(gen) compatibility: OpenSSH 7.4+, Dropbear SSH 2018.76+
+(gen) compression: enabled (zlib@openssh.com)                                   
+
+# key exchange algorithms
+(kex) curve25519-sha256                     -- [info] available since OpenSSH 7.4, Dropbear SSH 2018.76                            
+(kex) curve25519-sha256@libssh.org          -- [info] available since OpenSSH 6.5, Dropbear SSH 2013.62
+(kex) ecdh-sha2-nistp256                    -- [fail] using weak elliptic curves
+                                            `- [info] available since OpenSSH 5.7, Dropbear SSH 2013.62
+(kex) ecdh-sha2-nistp384                    -- [fail] using weak elliptic curves
+                                            `- [info] available since OpenSSH 5.7, Dropbear SSH 2013.62
+(kex) ecdh-sha2-nistp521                    -- [fail] using weak elliptic curves
+                                            `- [info] available since OpenSSH 5.7, Dropbear SSH 2013.62
+(kex) diffie-hellman-group-exchange-sha256 (2048-bit) -- [info] available since OpenSSH 4.4
+(kex) diffie-hellman-group16-sha512         -- [info] available since OpenSSH 7.3, Dropbear SSH 2016.73
+(kex) diffie-hellman-group18-sha512         -- [info] available since OpenSSH 7.3
+(kex) diffie-hellman-group14-sha256         -- [info] available since OpenSSH 7.3, Dropbear SSH 2016.73
+
+# host-key algorithms
+(key) rsa-sha2-512 (3072-bit)               -- [info] available since OpenSSH 7.2
+(key) rsa-sha2-256 (3072-bit)               -- [info] available since OpenSSH 7.2
+(key) ssh-rsa (3072-bit)                    -- [fail] using weak hashing algorithm
+                                            `- [info] available since OpenSSH 2.5.0, Dropbear SSH 0.28
+                                            `- [info] a future deprecation notice has been issued in OpenSSH 8.2: https://www.openssh.com/txt/release-8.2
+(key) ecdsa-sha2-nistp256                   -- [fail] using weak elliptic curves
+                                            `- [warn] using weak random number generator could reveal the key
+                                            `- [info] available since OpenSSH 5.7, Dropbear SSH 2013.62
+(key) ssh-ed25519                           -- [info] available since OpenSSH 6.5
+...SNIP...
+```
+
+#### Change Authentication Method
+
+```shell-session
+$ ssh -v cry0l1t3@10.129.14.132
+
+OpenSSH_8.2p1 Ubuntu-4ubuntu0.3, OpenSSL 1.1.1f  31 Mar 2020
+debug1: Reading configuration data /etc/ssh/ssh_config 
+...SNIP...
+debug1: Authentications that can continue: publickey,password,keyboard-interactive
+
+$ ssh -v cry0l1t3@10.129.14.132 -o PreferredAuthentications=password
+
+OpenSSH_8.2p1 Ubuntu-4ubuntu0.3, OpenSSL 1.1.1f  31 Mar 2020
+debug1: Reading configuration data /etc/ssh/ssh_config
+...SNIP...
+debug1: Authentications that can continue: publickey,password,keyboard-interactive
+debug1: Next authentication method: password
+
+cry0l1t3@10.129.14.132's password:
+```
+
+### Rsync
+
+[Rsync](https://linux.die.net/man/1/rsync) is a fast and efficient tool for locally and remotely copying files. It can be used to copy files locally on a given machine and to/from remote hosts.
+
+Has an algorithm that is particularly good when a version of the file exists on both computers because it sends the differences.
+
+This [guide](https://book.hacktricks.xyz/network-services-pentesting/873-pentesting-rsync) covers some of the ways Rsync can be abused, most notably by listing the contents of a shared folder on a target server and retrieving files. This can sometimes be done without authentication. Other times we will need credentials.
+
+#### Scanning for Rsync
+```shell-session
+$ sudo nmap -sV -p 873 127.0.0.1
+
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-09-19 09:31 EDT
+Nmap scan report for localhost (127.0.0.1)
+Host is up (0.0058s latency).
+
+PORT    STATE SERVICE VERSION
+873/tcp open  rsync   (protocol version 31)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 1.13 seconds
+```
+
+### Probing for Accessible Shares
+
+```shell-session
+$ nc -nv 127.0.0.1 873
+
+(UNKNOWN) [127.0.0.1] 873 (rsync) open
+@RSYNCD: 31.0
+@RSYNCD: 31.0
+#list
+dev            	Dev Tools
+@RSYNCD: EXIT
+```
+
+#### Emumerating an Open Share
+
+```shell-session
+$ rsync -av --list-only rsync://127.0.0.1/dev
+
+receiving incremental file list
+drwxr-xr-x             48 2022/09/19 09:43:10 .
+-rw-r--r--              0 2022/09/19 09:34:50 build.sh
+-rw-r--r--              0 2022/09/19 09:36:02 secrets.yaml
+drwx------             54 2022/09/19 09:43:10 .ssh
+
+sent 25 bytes  received 221 bytes  492.00 bytes/sec
+total size is 0  speedup is 0.00
+```
+
+From here, we could sync all files to our attack host with the command `rsync -av rsync://127.0.0.1/dev`. If Rsync is configured to use SSH to transfer files, we could modify our commands to include the `-e ssh` flag, or `-e "ssh -p2222"` if a non-standard port is in use for SSH. This [guide](https://phoenixnap.com/kb/how-to-rsync-over-ssh) is helpful for understanding the syntax for using Rsync over SSH.
+
+### R-Services
+
+A suite of services hosted to enable remote access or issue commands between Unix hosts over TCP/IP. `r-services` were the de facto standard for remote access between Unix operating systems until they were replaced by the Secure Shell (`SSH`) protocols and commands due to inherent security flaws built into them. Much like `telnet`, r-services transmit information from client to server(and vice versa.) over the network in an unencrypted format, making it possible for attackers to intercept network traffic (passwords, login information, etc.) by performing man-in-the-middle (`MITM`) attacks.
+
+`R-services` span across the ports `512`, `513`, and `514` and are only accessible through a suite of programs known as `r-commands`.
+
+The [R-commands](https://en.wikipedia.org/wiki/Berkeley_r-commands) suite consists of the following programs:
+
+-   rcp (`remote copy`)
+-   rexec (`remote execution`)
+-   rlogin (`remote login`)
+-   rsh (`remote shell`)
+-   rstat
+-   ruptime
+-   rwho (`remote who`)
+
+<table class="table table-striped text-left">
+<thead>
+<tr>
+<th><strong>Command</strong></th>
+<th><strong>Service Daemon</strong></th>
+<th><strong>Port</strong></th>
+<th><strong>Transport Protocol</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rcp</code></td>
+<td><code>rshd</code></td>
+<td>514</td>
+<td>TCP</td>
+<td>Copy a file or directory bidirectionally from the local system to the remote system (or vice versa) or from one remote system to another. It works like the <code>cp</code> command on Linux but provides <code>no warning to the user for overwriting existing files on a system</code>.</td>
+</tr>
+<tr>
+<td><code>rsh</code></td>
+<td><code>rshd</code></td>
+<td>514</td>
+<td>TCP</td>
+<td>Opens a shell on a remote machine without a login procedure. Relies upon the trusted entries in the <code>/etc/hosts.equiv</code> and <code>.rhosts</code> files for validation.</td>
+</tr>
+<tr>
+<td><code>rexec</code></td>
+<td><code>rexecd</code></td>
+<td>512</td>
+<td>TCP</td>
+<td>Enables a user to run shell commands on a remote machine. Requires authentication through the use of a <code>username</code> and <code>password</code> through an unencrypted network socket. Authentication is overridden by the trusted entries in the <code>/etc/hosts.equiv</code> and <code>.rhosts</code> files.</td>
+</tr>
+<tr>
+<td><code>rlogin</code></td>
+<td><code>rlogind</code></td>
+<td>513</td>
+<td>TCP</td>
+<td>Enables a user to log in to a remote host over the network. It works similarly to <code>telnet</code> but can only connect to Unix-like hosts. Authentication is overridden by the trusted entries in the <code>/etc/hosts.equiv</code> and <code>.rhosts</code> files.</td>
+</tr>
+</tbody>
+</table>
+
+#### /etc/hosts.equiv
+
+The /etc/hosts.equiv file contains a list of trusted hosts and is used to grant access to other systems on the network. When users on one of these hosts attempt to access the system, they are automatically granted access without further authentication.
+
+```shell-session
+$ cat /etc/hosts.equiv
+
+# <hostname> <local username>
+pwnbox cry0l1t3
+```
+
+#### Scanning for R-Services
+
+```shell-session
+sudo nmap -sV -p 512,513,514 10.0.17.2
+
+Starting Nmap 7.80 ( https://nmap.org ) at 2022-12-02 15:02 EST
+Nmap scan report for 10.0.17.2
+Host is up (0.11s latency).
+
+PORT    STATE SERVICE    VERSION
+512/tcp open  exec?
+513/tcp open  login?
+514/tcp open  tcpwrapped
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 145.54 seconds
+```
+
+#### Access Control and Trusted Relationships
+
+R-services rely on trusted information sent from the remote client to the host machine they are attempting to authenticate to. By default, these services utilize [Pluggable Authentication Modules (PAM)](https://web.mit.edu/rhel-doc/5/RHEL-5-manual/Deployment_Guide-en-US/ch-pam.html) for user authentication onto a remote system; however, they also bypass this authentication through the use of the `/etc/hosts.equiv` and `.rhosts` files on the system. The `hosts.equiv` and `.rhosts` files contain a list of hosts (`IPs` or `Hostnames`) and users that are `trusted` by the local host when a connection attempt is made using `r-commands`. Entries in either file can appear like the following:
+
+<p class="mb-0"><b>Note:</b> The <code>hosts.equiv</code> file is recognized as the global configuration regarding all users on a system, whereas <code>.rhosts</code> provides a per-user configuration. </p>
+
+#### Sample .rhosts file
+```shell-session
+Morrigar@htb[/htb]$ cat .rhosts
+
+htb-student     10.0.17.5
++               10.0.17.10
++               +
+```
+
+`+` here is a wildcard to specifiy anything.
+
+#### Login Using Rlogin
+
+```shell-session
+$ rlogin 10.0.17.2 -l htb-student
+
+Last login: Fri Dec  2 16:11:21 from localhost
+
+[htb-student@localhost ~]$
+```
+
+#### List Authenticated Users with Rwho
+```shell-session
+$ rwho
+
+root     web01:pts/0 Dec  2 21:34
+htb-student     workstn01:tty1  Dec  2 19:57  2:25    
+```
+
+#### List Authenticated Users with Rusers
+
+```shell-session
+$ rusers -al 10.0.17.5
+
+htb-student     10.0.17.5:console          Dec 2 19:57     2:25
+```
+
+Remote management services can provide us with a treasure trove of data and often be abused for unauthorized access through either weak/default credentials or password re-use. We should always probe these services for as much information as we can gather and leave no stone unturned, especially when we have compiled a list of credentials from elsewhere in the target network.
+
+## Windows Remote Management Protocols
+
+The main components used for remote management of Windows and Windows servers are the following:
+
+-   Remote Desktop Protocol (`RDP`)
+    
+-   Windows Remote Management (`WinRM`)
+    
+-   Windows Management Instrumentation (`WMI`)
+
+### RDP
+
+The [Remote Desktop Protocol](https://docs.microsoft.com/en-us/troubleshoot/windows-server/remote/understanding-remote-desktop-protocol) (`RDP`) is a protocol developed by Microsoft for remote access to a computer running the Windows operating system. This protocol allows display and control commands to be transmitted via the GUI encrypted over IP networks. RDP works at the application layer in the TCP/IP reference model, typically utilizing TCP port 3389 as the transport protocol. However, the connectionless UDP protocol can use port 3389 also for remote administration.
+
+Network firewall and server firewall must allow connections from the outside. 
+
+If [Network Address Translation](https://en.wikipedia.org/wiki/Network_address_translation) (`NAT`) is used on the route between client and server, as is often the case with Internet connections, the remote computer needs the public IP address to reach the server. In addition, port forwarding must be set up on the NAT router in the direction of the server.
+
+RDP has handled [Transport Layer Security](https://en.wikipedia.org/wiki/Transport_Layer_Security) (`TLS/SSL`) since Windows Vista, which means that all data, and especially the login process, is protected in the network by its good encryption.
+
+#### Footprinting the Service
+
+```shell-session
+nmap -sV -sC 10.129.201.248 -p3389 --script rdp*
+
+Starting Nmap 7.92 ( https://nmap.org ) at 2021-11-06 15:45 CET
+Nmap scan report for 10.129.201.248
+Host is up (0.036s latency).
+
+PORT     STATE SERVICE       VERSION
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+| rdp-enum-encryption: 
+|   Security layer
+|     CredSSP (NLA): SUCCESS
+|     CredSSP with Early User Auth: SUCCESS
+|_    RDSTLS: SUCCESS
+| rdp-ntlm-info: 
+|   Target_Name: ILF-SQL-01
+|   NetBIOS_Domain_Name: ILF-SQL-01
+|   NetBIOS_Computer_Name: ILF-SQL-01
+|   DNS_Domain_Name: ILF-SQL-01
+|   DNS_Computer_Name: ILF-SQL-01
+|   Product_Version: 10.0.17763
+|_  System_Time: 2021-11-06T13:46:00+00:00
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 8.26 seconds
+```
+
+In addition, we can use `--packet-trace` to track the individual packages and inspect their contents manually. We can see that the `RDP cookies` (`mstshash=nmap`) used by Nmap to interact with the RDP server can be identified by `threat hunters` and various security services such as [Endpoint Detection and Response](https://en.wikipedia.org/wiki/Endpoint_detection_and_response) (`EDR`), and can lock us out as penetration testers on hardened networks.
+
+A Perl script named [rdp-sec-check.pl](https://github.com/CiscoCXSecurity/rdp-sec-check) has also been developed by [Cisco CX Security Labs](https://github.com/CiscoCXSecurity) that can unauthentically identify the security settings of RDP servers based on the handshakes.
+
+#### RDP Security Check - Installation
+```shell-session
+$ sudo cpan
+
+Loading internal logger. Log::Log4perl recommended for better logging
+
+CPAN.pm requires configuration, but most of it can be done automatically.
+If you answer 'no' below, you will enter an interactive dialog for each
+configuration option instead.
+
+Would you like to configure as much as possible automatically? [yes] yes
+
+
+Autoconfiguration complete.
+
+commit: wrote '/root/.cpan/CPAN/MyConfig.pm'
+
+You can re-run configuration any time with 'o conf init' in the CPAN shell
+
+cpan shell -- CPAN exploration and modules installation (v2.27)
+Enter 'h' for help.
+
+
+cpan[1]> install Encoding::BER
+
+Fetching with LWP:
+http://www.cpan.org/authors/01mailrc.txt.gz
+Reading '/root/.cpan/sources/authors/01mailrc.txt.gz'
+............................................................................DONE
+...SNIP...
+```
+
+#### RDP Security Check
+
+```shell-session
+$ git clone https://github.com/CiscoCXSecurity/rdp-sec-check.git && cd rdp-sec-check
+Morrigar@htb[/htb]$ ./rdp-sec-check.pl 10.129.201.248
+
+Starting rdp-sec-check v0.9-beta ( http://labs.portcullis.co.uk/application/rdp-sec-check/ ) at Sun Nov  7 16:50:32 2021
+
+[+] Scanning 1 hosts
+
+Target:    10.129.201.248
+IP:        10.129.201.248
+Port:      3389
+
+[+] Checking supported protocols
+
+[-] Checking if RDP Security (PROTOCOL_RDP) is supported...Not supported - HYBRID_REQUIRED_BY_SERVER
+[-] Checking if TLS Security (PROTOCOL_SSL) is supported...Not supported - HYBRID_REQUIRED_BY_SERVER
+[-] Checking if CredSSP Security (PROTOCOL_HYBRID) is supported [uses NLA]...Supported
+
+[+] Checking RDP Security Layer
+
+[-] Checking RDP Security Layer with encryption ENCRYPTION_METHOD_NONE...Not supported
+[-] Checking RDP Security Layer with encryption ENCRYPTION_METHOD_40BIT...Not supported
+[-] Checking RDP Security Layer with encryption ENCRYPTION_METHOD_128BIT...Not supported
+[-] Checking RDP Security Layer with encryption ENCRYPTION_METHOD_56BIT...Not supported
+[-] Checking RDP Security Layer with encryption ENCRYPTION_METHOD_FIPS...Not supported
+
+[+] Summary of protocol support
+
+[-] 10.129.201.248:3389 supports PROTOCOL_SSL   : FALSE
+[-] 10.129.201.248:3389 supports PROTOCOL_HYBRID: TRUE
+[-] 10.129.201.248:3389 supports PROTOCOL_RDP   : FALSE
+
+[+] Summary of RDP encryption support
+
+[-] 10.129.201.248:3389 supports ENCRYPTION_METHOD_NONE   : FALSE
+[-] 10.129.201.248:3389 supports ENCRYPTION_METHOD_40BIT  : FALSE
+[-] 10.129.201.248:3389 supports ENCRYPTION_METHOD_128BIT : FALSE
+[-] 10.129.201.248:3389 supports ENCRYPTION_METHOD_56BIT  : FALSE
+[-] 10.129.201.248:3389 supports ENCRYPTION_METHOD_FIPS   : FALSE
+
+[+] Summary of security issues
+
+
+rdp-sec-check v0.9-beta completed at Sun Nov  7 16:50:33 2021
+```
+
+
+#### Initiate an RDP Session
+
+```shell-session
+$ xfreerdp /u:cry0l1t3 /p:"P455w0rd!" /v:10.129.201.248
+
+```
+
+Note: To install xfreedp on Parrot, I needed to install 'aptitude' then run aptitude install freerdp2-x11.  Answer no, then downgrade the package dependencies.
+
+### WinRM
+
+The Windows Remote Management (`WinRM`) is a simple Windows integrated remote management protocol based on the command line. WinRM uses the Simple Object Access Protocol (`SOAP`) to establish connections to remote hosts and their applications. Therefore, WinRM must be explicitly enabled and configured starting with Windows 10. WinRM relies on `TCP` ports `5985` and `5986` for communication, with the last port `5986 using HTTPS`, as ports 80 and 443 were previously used for this task. However, since port 80 was mainly blocked for security reasons, the newer ports 5985 and 5986 are used today.
+
+Another component that fits WinRM for administration is Windows Remote Shell (`WinRS`), which lets us execute arbitrary commands on the remote system.
+
+#### Footprinting the Service
+
+As we already know, WinRM uses TCP ports `5985` (`HTTP`) and `5986` (`HTTPS`) by default, which we can scan using Nmap. However, often we will see that only HTTP (`TCP 5985`) is used instead of HTTPS (`TCP 5986`).
+
+#### Nmap WinRM
+
+```shell-session
+$ nmap -sV -sC 10.129.201.248 -p5985,5986 --disable-arp-ping -n
+
+Starting Nmap 7.92 ( https://nmap.org ) at 2021-11-06 16:31 CET
+Nmap scan report for 10.129.201.248
+Host is up (0.030s latency).
+
+PORT     STATE SERVICE VERSION
+5985/tcp open  http    Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 7.34 seconds
+```
+
+
+```shell-session
+$ evil-winrm -i 10.129.201.248 -u Cry0l1t3 -p P455w0rD!
+
+Evil-WinRM shell v3.3
+
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+
+Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+
+Info: Establishing connection to remote endpoint
+
+*Evil-WinRM* PS C:\Users\Cry0l1t3\Documents>
+```
+
+
+### WMI
+
+Windows Management Instrumentation (`WMI`) is Microsoft's implementation and also an extension of the Common Information Model (`CIM`), core functionality of the standardized Web-Based Enterprise Management (`WBEM`) for the Windows platform. WMI allows read and write access to almost all settings on Windows systems. Understandably, this makes it the most critical interface in the Windows environment for the administration and remote maintenance of Windows computers, regardless of whether they are PCs or servers. WMI is typically accessed via PowerShell, VBScript, or the Windows Management Instrumentation Console (`WMIC`). WMI is not a single program but consists of several programs and various databases, also known as repositories.
+
+#### Footprinting the Service
+
+The initialization of the WMI communication always takes place on `TCP` port `135`, and after the successful establishment of the connection, the communication is moved to a random port. For example, the program [wmiexec.py](https://github.com/SecureAuthCorp/impacket/blob/master/examples/wmiexec.py) from the Impacket toolkit can be used for this.
+
+```shell-session
+$ /usr/share/doc/python3-impacket/examples/wmiexec.py Cry0l1t3:"P455w0rD!"@10.129.201.248 "hostname"
+
+Impacket v0.9.22 - Copyright 2020 SecureAuth Corporation
+
+[*] SMBv3.0 dialect used
+ILF-SQL-01
 ```
