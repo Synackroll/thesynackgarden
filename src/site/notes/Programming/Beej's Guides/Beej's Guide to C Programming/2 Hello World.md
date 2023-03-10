@@ -62,6 +62,15 @@ If you’re using an _Integrated Development Environment_ (IDE), you probably do
 
 With VS Code, you can hit `F5` to run via the debugger. (You’ll have to install the C/C++ Extension.)
 
+# 2.7 C Versions
+
+There's a lot of them. You can force GCC to use one with the -std= command line argument. Beej uses C2x with all warnings set.
+
+```
+gcc -Wall -Wextra -std=c2x -pedantic foo.c
+```
+
+
 
 
 
