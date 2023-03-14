@@ -18,13 +18,13 @@ Linux examples:
 * shadow.bak
 * password
 
-Brute forcing works because administrators have to login. Their username are usually guessable and the passwords that people choose are complex.
+Brute forcing works because administrators have to login. Their username are usually guessable and the passwords that people choose are not complex.
 
 ## Basic HTTP Auth Brute Forcing
 
 ### Password Attacks
 
-1. Basic HTTPA UTH is used to authenticate the user to the HTTP server.
+1. Basic HTTP AUTH is used to authenticate the user to the HTTP server.
 2. Proxy Server Authentication is used to authenticate the user to the intermediate proxy server.
 
 Both of these use requests, resposne status codes, and response headers. The difference is in the status codes and the header names used.
