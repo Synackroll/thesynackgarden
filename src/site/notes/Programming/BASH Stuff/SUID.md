@@ -14,3 +14,5 @@ Now, to see this in a practical light, let's look at the `/usr/bin/passwd` comma
 ```
 
 Note the **s** where **x** would usually indicate execute permissions for the user.
+
+[Pwn College](http://pwn.college) has an entire [series](https://dojo.pwn.college/fundamentals/program-misuse) on abusing suid privileges.
