@@ -5,7 +5,7 @@
 
 A client-server protocol that regulates access to files and entire directories and other network resources such as printers, routers, or interfaces released for the network. Information exchange between different system processes can also be handled based on the SMB protocol. [SMB](https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-smb/f210069c-7086-4dc2-885e-861d837df688) first became available to a broader public, for example, as part of the OS/2 network operating system LAN Manager and LAN Server. Since then, the main application area of the protocol has been the Windows operating system series in particular, whose network services support SMB in a downward-compatible manner - which means that devices with newer editions can easily communicate with devices that have an older Microsoft operating system installed. With the free software project Samba, there is also a solution that enables the use of SMB in Linux and Unix distributions and thus cross-platform communication via SMB.
 
-In IP networks, SMNB uses TCP.
+In IP networks, SMB uses TCP.
 
 SMB servers can provide parts of its local file system as shares. Access rights are defined in the [[Cybersecurity/Penetration Tester/Acess Control Lists\|Acess Control Lists]]. 
 
