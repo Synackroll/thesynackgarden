@@ -6,7 +6,7 @@
 
 Variable is a human-readable name that refers to some data in memory.
 
-Memory is just a big array of bytes. Data is stored in that array. If a number is larger than a single byte, it is stored in multiple bytes. Each byte of memory is referred to by its indiex. The index into memory is called an *address*, *location*, or *pointer*.
+Memory is just a big array of bytes. Data is stored in that array. If a number is larger than a single byte, it is stored in multiple bytes. Each byte of memory is referred to by its index. The index into memory is called an *address*, *location*, or *pointer*.
 
 In C, the value of a variable is in memory *somewhere* at some address. It's a pain to remember the value by its numeric address so we make up a name for it. That's all that a variable is.
 
