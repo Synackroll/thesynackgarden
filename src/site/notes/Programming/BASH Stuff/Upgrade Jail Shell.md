@@ -1,7 +1,9 @@
 ---
 {"dg-publish":true,"permalink":"/programming/bash-stuff/upgrade-jail-shell/"}
 ---
-
+clea---
+dg-publish: true
+---
 # On the shell:
 ```
 python -c import pty;pty.spawn("/bin/bash")
