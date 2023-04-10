@@ -807,7 +807,7 @@ $ for i in $(seq 500 1100);do rpcclient -N -U "" 10.129.14.128 -c "queryuser 0x$
 #### Impacket -Samrdump.py
 
 ```shell-session
-Morrigar@htb[/htb]$ samrdump.py 10.129.14.128
+$ samrdump.py 10.129.14.128
 
 Impacket v0.9.22 - Copyright 2020 SecureAuth Corporation
 
@@ -3301,7 +3301,7 @@ R-services rely on trusted information sent from the remote client to the host m
 
 #### Sample .rhosts file
 ```shell-session
-Morrigar@htb[/htb]$ cat .rhosts
+$ cat .rhosts
 
 htb-student     10.0.17.5
 +               10.0.17.10
@@ -3428,7 +3428,7 @@ Reading '/root/.cpan/sources/authors/01mailrc.txt.gz'
 
 ```shell-session
 $ git clone https://github.com/CiscoCXSecurity/rdp-sec-check.git && cd rdp-sec-check
-Morrigar@htb[/htb]$ ./rdp-sec-check.pl 10.129.201.248
+$ ./rdp-sec-check.pl 10.129.201.248
 
 Starting rdp-sec-check v0.9-beta ( http://labs.portcullis.co.uk/application/rdp-sec-check/ ) at Sun Nov  7 16:50:32 2021
 
