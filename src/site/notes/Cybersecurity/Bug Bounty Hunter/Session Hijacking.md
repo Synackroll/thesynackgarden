@@ -32,8 +32,8 @@ $ cat /etc/php/7.4/apache2/php.ini | grep 'session.save_path'
 In our default configuration case it's `/var/lib/php/sessions`. Now, please note a victim has to be authenticated for us to view their session identifier. The files an attacker will search for use the name convention `sess_<sessionID>`.
 
 ```shell-session
-Morrigar@htb[/htb]$ ls /var/lib/php/sessions
-Morrigar@htb[/htb]$ cat //var/lib/php/sessions/sess_s6kitq8d3071rmlvbfitpim9mm
+$ ls /var/lib/php/sessions
+$ cat //var/lib/php/sessions/sess_s6kitq8d3071rmlvbfitpim9mm
 ```
 
 ### JAVA
