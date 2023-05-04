@@ -21,7 +21,7 @@ Nmap offers many different types of scans that can be used to obtain various res
 
 ### Syntax
 
-Generally: `nmap <scan types> <opetions> <target>`
+Generally: `nmap <scan types> <options> <target>`
 
 ### Scan Techniques.
 
