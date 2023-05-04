@@ -61,7 +61,7 @@ Commone exploitation extensions may be blacklisted on the back end.
 
 ### Blacklisting Extensions
 
-There are to common forms of validating.  Testing against a **blacklist** or testing against a **whitelist.**
+There are two common forms of validating.  Testing against a **blacklist** or testing against a **whitelist.**
 
 When we run up against an extension blacklist (or whitelist) the first step is to fuzz the upload function with a list of potential extensions to see which return errors and which return a different message.
 
@@ -87,7 +87,7 @@ A typical whitelist file extension test:
 5     die();
 6 }
 ```
-Line 5 has the regex match string.  ^ is the start of the string followed by .*  The . is "any character" and the * is any number of times.  \ is the regex escape character which tells regex it's looking for the actual character followed by the \.  (In this case, a '.'  So it looks for any characters until it finds "." then makes sure that the "." is followed by one of the extensions between the ().
+Line 3 has the regex match string.  ^ is the start of the string followed by .*  The . is "any character" and the * is any number of times.  \ is the regex escape character which tells regex it's looking for the actual character followed by the \.  (In this case, a '.'  So it looks for any characters until it finds "." then makes sure that the "." is followed by one of the extensions between the ().
 
 Most importantly, it doesn't then check to see if the string ends.  I think they could do that by tacking the end of string regex ($) at the end.
 
