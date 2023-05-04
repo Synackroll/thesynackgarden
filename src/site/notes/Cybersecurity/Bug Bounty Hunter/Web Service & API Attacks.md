@@ -78,11 +78,11 @@ Payload in XML is usually a single `<methodCall>` structure. The methodcall shou
 The `{"method": "sum", "params": {"a":3, "b":4}, "id":0}` object is serialized using JSON. Note the three properties: `method`, `params` and `id`. `method` contains the name of the method to invoke. `params` contains an array carrying the arguments to be passed. `id` contains an identifier established by the client. The server must reply with the same value in the response object if included.
 
 - [[Cybersecurity/Bug Bounty Hunter/Simple Object Access Protocol\|SOAP]]
-	- SOUP also uses XML but provides more functionalities than XML-RPC. SOAP defines both a header and a payload structure.
+	- SOAP also uses XML but provides more functionalities than XML-RPC. SOAP defines both a header and a payload structure.
 	- A Web Services Definition Language declaration is optional.
 	- Anatomy of a SOAP Message
 		- soap:Envelope: (Required block) Tag to differentiate SOAP from normal XML. This tag requires a `namespace` attribute.
-		- souap:Header: (Optional Block) Enables SOAP's extensibility through SOAP.
+		- soap:Header: (Optional Block) Enables SOAP's extensibility through SOAP.
 		- soap:Body: (Required block) Contains the procedure, parameters, and data
 		- soap:Fault: (oprional lock) Used within soap:Body for error messages upon a failed API call.
 
@@ -319,7 +319,7 @@ This file follows the [WSDL version 1.1](https://www.w3.org/TR/2001/NOTE-wsdl-20
 
 ## [[Cybersecurity/Bug Bounty Hunter/Simple Object Access Protocol\|SOAP]] Action Spoofing
 
-SOAP messages toward a SOAP servuce should include the operation and the related parameters. If submitted via HTTP, it can have an additional HTTP header called SOAPAction, which contains the operations name.
+SOAP messages toward a SOAP service should include the operation and the related parameters. If submitted via HTTP, it can have an additional HTTP header called SOAPAction, which contains the operations name.
 
 If a web service considers only the SOAPAction attribute when determining the operation to execute then it may be vulnerable to SOAPAction spoofing.
 
@@ -377,7 +377,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 ?>
 ```
 
-It's the secondp art of the code that is vulnerable to injection here. The server path is put into an array (by the ridiculously named `explode()` function. ) and then call_user_func_array() is used to execute. The first part of the path becomes the command and the second part becomes  the command.
+It's the second part of the code that is vulnerable to injection here. The server path is put into an array (by the ridiculously named `explode()` function. ) and then call_user_func_array() is used to execute. The first part of the path becomes the command and the second part becomes  the command.
 
 Explode funciton defn: `explode(string $separator, string $string, int $limit = PHP_INT_MAX): array`
 
