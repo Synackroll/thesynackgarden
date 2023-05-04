@@ -4,7 +4,7 @@
 
 A type of [[Cybersecurity/Bug Bounty Hunter/Cross-Site Scripting/Cross-Site Scripting (XSS)\|Cross-Site Scripting (XSS)]] that is completely processed on the client-side through [[Programming/JavaScript\|JavaScript]].
 
-DOM-based XSS occurs when the **sink** function--the function that writes user input to the DOM object on a page--does not properly sanitzie user input taken in via the **source** function.
+DOM-based XSS occurs when the **sink** function--the function that writes user input to the DOM object on a page--does not properly sanitize user input taken in via the **source** function.
 
 Common JavaScript functions used to write to the DOM object:
 * document.write()
