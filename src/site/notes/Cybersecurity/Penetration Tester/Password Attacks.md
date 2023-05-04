@@ -1724,7 +1724,7 @@ Password changeable          1/14/2022 12:48:58 PM
 Password required            Yes
 User may change password     Yes
 
-```
+ ```
 
 ```Workstations allowed         All
 Logon script
@@ -2414,7 +2414,7 @@ $ hashcat -m 1800 -a 0 /tmp/unshadowed.hashes rockyou.txt -o /tmp/unshadowed.cra
 
 A [Pass the Hash (PtH)](https://attack.mitre.org/techniques/T1550/002/) attack is a technique where an attacker uses a password hash instead of the plain text password for authentication.
 
-Remember that hashes can be obtained various ways"
+Remember that hashes can be obtained various ways:
 -   Dumping the local SAM database from a compromised host.
 -   Extracting hashes from the NTDS database (ntds.dit) on a Domain Controller.
 -   Pulling the hashes from memory (lsass.exe).
@@ -3313,7 +3313,7 @@ david@inlanefreight.htb@linux01:~$ smbclient //dc01/carlos -k -c ls
 **Note:** To keep the ticket from the current session, before importing the keytab, save a copy of the ccache file present in the enviroment variable `KRB5CCNAME`.
 
 ## KeyTab Extract
-
+lo
 We can try and crack the account password if we have a keytab. We use KeyTabExtract to extract information from a 502-type .keytab file.
 
 ```shell-session
