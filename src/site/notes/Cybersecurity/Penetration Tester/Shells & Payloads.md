@@ -86,7 +86,7 @@ With a reverse shell the attack box listens and the target initiates.
 
 We will often use this kind of shell as we come across vulnerable systems because it is likely that an admin will overlook outbound connections, giving us a better chance of going undetected. The last section discussed how bind shells rely on incoming connections allowed through the firewall on the server-side.
 
-There are helpful tools that infosec veterans have put together to assist us. [Reverse Shell Cheat Sheet](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md) is one fantastic resource that contains a list of different commands, code, and even automated reverse shell generators we can use when practicing or on an actual engagement.
+There are helpful tools that infosec veterans have put together to assist us. [Reverse Shell Cheat Sheet](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md) is one fantastic resource that contains a list of different commands, code, and even automated reverse shell generators we can use when practicing or on an actual engagement. Revshells.com and shell generator.
 
 ## Hands-On Reverse Shell
 
@@ -882,7 +882,7 @@ A `web shell` is a browser-based shell session we can use to interact with the u
 
 A repository of ready-made files that can be used to inject onto a victim and receive back access via reverse shell. A repo with many injectable files. It's on penetration distributions but can be pulled from [here](https://github.com/jbarcia/Web-Shells/tree/master/laudanum). 
 
-Basically you need to upload the correct type of shell and then navigate to the locaton where the shell is stored. The demo of this required us to upload to a target, basically told us where the page was, then had us navigate there and use the shell.
+Basically you need to upload the correct type of shell and then navigate to the location where the shell is stored. The demo of this required us to upload to a target, basically told us where the page was, then had us navigate there and use the shell.
 
 # Amtal Webshell
 
