@@ -2875,6 +2875,249 @@ msdb
 Transactions    
 ```
 
+## Oracle TNS
+
+The `Oracle Transparent Network Substrate` (`TNS`) server is a communication protocol that facilitates communication between Oracle databases and applications over networks. Initially introduced as part of the [Oracle Net Services](https://docs.oracle.com/en/database/oracle/oracle-database/18/netag/introducing-oracle-net-services.html) software suite
+
+TNS supports various networking protocols between Oracle databases and client applications, such as `IPX/SPX` and `TCP/IP` protocol stacks. As a result, it has become a preferred solution for managing large, complex databases in the healthcare, finance, and retail industries.
+
+### Default Confiugration
+
+- Listener listens on TCP /1521 port.
+- Listener listens with TCP/IP, UDP, and AppleTAlk
+- Some versions allow for remote management (`Oracle 8i/9i`)
+
+Has basic security features: 
+- Basic Authorization.
+- Accept connections only from authorized hosts.
+- etc.
+
+Default config files are in the `/ORACLE_HOME/network/admin` They aer: `tnsnames.ora` and `listener.ora`
+
+Oracle TNS is ofetn used with other Oracle Services, these and the base version may have default passwords.
+
+Each database or service has a unique entry in the [tnsnames.ora](https://docs.oracle.com/cd/E11882_01/network.112/e10835/tnsnames.htm#NETRF007) file, containing the necessary information for clients to connect to the service. The entry consists of a name for the service, the network location of the service, and the database or service name that clients should use when connecting to the service. For example, a simple `tnsnames.ora` file might look like this:
+
+##### Tnsnames.ora
+
+```txt
+ORCL =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = 10.129.11.102)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = orcl)
+    )
+  )
+```
+
+
+On the other hand, the `listener.ora` file is a server-side configuration file that defines the listener process's properties and parameters, which is responsible for receiving incoming client requests and forwarding them to the appropriate Oracle database instance.
+
+##### Listener.ora
+```txt
+SID_LIST_LISTENER =
+  (SID_LIST =
+    (SID_DESC =
+      (SID_NAME = PDB1)
+      (ORACLE_HOME = C:\oracle\product\19.0.0\dbhome_1)
+      (GLOBAL_DBNAME = PDB1)
+      (SID_DIRECTORY_LIST =
+        (SID_DIRECTORY =
+          (DIRECTORY_TYPE = TNS_ADMIN)
+          (DIRECTORY = C:\oracle\product\19.0.0\dbhome_1\network\admin)
+        )
+      )
+    )
+  )
+
+LISTENER =
+  (DESCRIPTION_LIST =
+    (DESCRIPTION =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = orcl.inlanefreight.htb)(PORT = 1521))
+      (ADDRESS = (PROTOCOL = IPC)(KEY = EXTPROC1521))
+    )
+  )
+
+ADR_BASE_LISTENER = C:\oracle
+```
+
+
+- `tnsnames.ora` is used to resolve service names to network addresses.
+- `listener.ora` is used to determine the services it should listen to and their behavior.
+
+<table class="table table-striped text-left">
+<thead>
+<tr>
+<th><strong>Setting</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DESCRIPTION</code></td>
+<td>A descriptor that provides a name for the database and its connection type.</td>
+</tr>
+<tr>
+<td><code>ADDRESS</code></td>
+<td>The network address of the database, which includes the hostname and port number.</td>
+</tr>
+<tr>
+<td><code>PROTOCOL</code></td>
+<td>The network protocol used for communication with the server</td>
+</tr>
+<tr>
+<td><code>PORT</code></td>
+<td>The port number used for communication with the server</td>
+</tr>
+<tr>
+<td><code>CONNECT_DATA</code></td>
+<td>Specifies the attributes of the connection, such as the service name or SID, protocol, and database instance identifier.</td>
+</tr>
+<tr>
+<td><code>INSTANCE_NAME</code></td>
+<td>The name of the database instance the client wants to connect.</td>
+</tr>
+<tr>
+<td><code>SERVICE_NAME</code></td>
+<td>The name of the service that the client wants to connect to.</td>
+</tr>
+<tr>
+<td><code>SERVER</code></td>
+<td>The type of server used for the database connection, such as dedicated or shared.</td>
+</tr>
+<tr>
+<td><code>USER</code></td>
+<td>The username used to authenticate with the database server.</td>
+</tr>
+<tr>
+<td><code>PASSWORD</code></td>
+<td>The password used to authenticate with the database server.</td>
+</tr>
+<tr>
+<td><code>SECURITY</code></td>
+<td>The type of security for the connection.</td>
+</tr>
+<tr>
+<td><code>VALIDATE_CERT</code></td>
+<td>Whether to validate the certificate using SSL/TLS.</td>
+</tr>
+<tr>
+<td><code>SSL_VERSION</code></td>
+<td>The version of SSL/TLS to use for the connection.</td>
+</tr>
+<tr>
+<td><code>CONNECT_TIMEOUT</code></td>
+<td>The time limit in seconds for the client to establish a connection to the database.</td>
+</tr>
+<tr>
+<td><code>RECEIVE_TIMEOUT</code></td>
+<td>The time limit in seconds for the client to receive a response from the database.</td>
+</tr>
+<tr>
+<td><code>SEND_TIMEOUT</code></td>
+<td>The time limit in seconds for the client to send a request to the database.</td>
+</tr>
+<tr>
+<td><code>SQLNET.EXPIRE_TIME</code></td>
+<td>The time limit in seconds for the client to detect a connection has failed.</td>
+</tr>
+<tr>
+<td><code>TRACE_LEVEL</code></td>
+<td>The level of tracing for the database connection.</td>
+</tr>
+<tr>
+<td><code>TRACE_DIRECTORY</code></td>
+<td>The directory where the trace files are stored.</td>
+</tr>
+<tr>
+<td><code>TRACE_FILE_NAME</code></td>
+<td>The name of the trace file.</td>
+</tr>
+<tr>
+<td><code>LOG_FILE</code></td>
+<td>The file where the log information is stored.</td>
+</tr>
+</tbody>
+</table>
+
+## Oracle Tools Setup
+
+```bash
+#!/bin/bash
+
+sudo apt-get install libaio1 python3-dev alien python3-pip -y
+git clone https://github.com/quentinhardy/odat.git
+cd odat/
+git submodule init
+sudo submodule update
+sudo apt install oracle-instantclient-basic oracle-instantclient-devel oracle-instantclient-sqlplus -y
+pip3 install cx_Oracle
+sudo apt-get install python3-scapy -y
+sudo pip3 install colorlog termcolor pycryptodome passlib python-libnmap
+sudo pip3 install argcomplete && sudo activate-global-python-argcomplete
+```
+
+Basically we're settingup to run odat. Once we've identified that the oracl service is listening via nmap:
+```shell-session
+$ sudo nmap -p1521 -sV 10.129.204.235 --open
+
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-03-06 10:59 EST
+Nmap scan report for 10.129.204.235
+Host is up (0.0041s latency).
+
+PORT     STATE SERVICE    VERSION
+1521/tcp open  oracle-tns Oracle TNS listener 11.2.0.2.0 (unauthorized)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 6.64 seconds
+```
+
+We need to get the System Identifier (SID). Clients that connect to the database will need the service's SID and connection string. First we get the SID.
+
+#### NMAP - SID Bruteforcing
+
+```shell-session
+$ sudo nmap -p1521 -sV 10.129.204.235 --open --script oracle-sid-brute
+
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-03-06 11:01 EST
+Nmap scan report for 10.129.204.235
+Host is up (0.0044s latency).
+
+PORT     STATE SERVICE    VERSION
+1521/tcp open  oracle-tns Oracle TNS listener 11.2.0.2.0 (unauthorized)
+| oracle-sid-brute: 
+|_  XE
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 55.40 seconds
+```
+
+#### ODAT
+
+ODAT has a number of scans to gather information.  We can try the all option.
+
+```shell-session
+$ ./odat.py all -s 10.129.204.235
+
+[+] Checking if target 10.129.204.235:1521 is well configured for a connection...
+[+] According to a test, the TNS listener 10.129.204.235:1521 is well configured. Continue...
+
+...SNIP...
+
+[!] Notice: 'mdsys' account is locked, so skipping this username for password           #####################| ETA:  00:01:16 
+[!] Notice: 'oracle_ocm' account is locked, so skipping this username for password       #####################| ETA:  00:01:05 
+[!] Notice: 'outln' account is locked, so skipping this username for password           #####################| ETA:  00:00:59
+[+] Valid credentials found: scott/tiger. Continue...
+
+...SNIP...
+```
+
+
+
+
 ## [[Cybersecurity/Penetration Tester/Intelligent Platform Management Interface\|Intelligent Platform Management Interface]]
 
 IPMI Communicates over port 623 UDP. Systems that use the IPMI protocol are called Basedboard Management Controllers (BMCs). Typically embedded as ARM systems running Linux and connected directly to the host's motherboard.
