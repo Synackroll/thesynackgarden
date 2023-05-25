@@ -1330,7 +1330,7 @@ The `SOA` record is located in a domain's zone file and specifies who is respons
 
 ### Default Configuration
 
-All DNS servers wrok with three different types of configuraiton files:
+All DNS servers work with three different types of configuraiton files:
 
 1. local DNS configuration files.
 2. zone files.
