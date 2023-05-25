@@ -113,7 +113,7 @@ crackmapexec smb <tgt_up> --shares -u 'SomeUser' -p ''
 
 # Understand How to Get Information from Databases
 
-One of the main functions for computer is storing and reetrieving information, this information is often organized and stored in databases. There are a number of different kinds of databases [relational databases](https://en.wikipedia.org/wiki/Relational_database) that organize data into tables. Understanding how to query these databases is important.
+One of the main functions for computers is storing and reetrieving information, this information is often organized and stored in databases. There are a number of different kinds of databases [relational databases](https://en.wikipedia.org/wiki/Relational_database) that organize data into tables. Understanding how to query these databases is important.
 
 1. Tell the computer which database you want to use.
 2. Figure out which tables have the information you're interested in. Often this is something like "Users"
