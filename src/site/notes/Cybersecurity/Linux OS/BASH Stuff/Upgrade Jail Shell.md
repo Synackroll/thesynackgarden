@@ -13,6 +13,15 @@ export TERM=xterm
 # CTL-Z to back out then do:
 
 ```
+parrot@parrot $ stty -a
+<Get your terminal dimensions>
 parrot@parrot $ stty raw -echo; fg
+```
+
+Back in:
+```
+$ reset 
+<Put in your terminal xterm-2560color>
+$ stty rows ## columns ##
 ```
 
